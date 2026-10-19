@@ -12,11 +12,11 @@ assert(fs.existsSync(preloaderPath), 'js/preloader.js must exist');
 const { parseRangeHeader, buildRangeResponse, APP_SHELL } = await import(`file://${swPath}`);
 const { TourPreloader, selectOptimalAudio } = await import(`file://${preloaderPath}`);
 
-// 0. Verify APP_SHELL contains essential offline boot files
+// 0. Verify APP_SHELL contains essential shell files
 assert(Array.isArray(APP_SHELL), 'APP_SHELL must be an array');
-assert(APP_SHELL.includes('./content/fr/config.yml'), 'APP_SHELL must include ./content/fr/config.yml');
-assert(APP_SHELL.includes('./content/en/config.yml'), 'APP_SHELL must include ./content/en/config.yml');
-assert(APP_SHELL.includes('./content/fr/cathedral-cover.jpg'), 'APP_SHELL must include ./content/fr/cathedral-cover.jpg');
+assert(APP_SHELL.includes('./index.html'), 'APP_SHELL must include ./index.html');
+assert(APP_SHELL.includes('./css/styles.css'), 'APP_SHELL must include ./css/styles.css');
+assert(APP_SHELL.includes('./config.yml'), 'APP_SHELL must include ./config.yml');
 
 // 1. Test parseRangeHeader
 const totalSize = 1000;

@@ -104,9 +104,9 @@ export class AudioguideApp {
       console.warn('Using default root config fallback:', err);
       this.rootConfig = {
         monument: {
-          name: "Cathédrale Saint-Gatien de Tours",
-          subtitle: "Chef-d'œuvre gothique & vitraux du XIIIe siècle",
-          cover_image: "content/fr/cathedral-cover.jpg"
+          name: "Audioguide",
+          subtitle: "",
+          cover_image: ""
         },
         languages: [
           { code: 'fr', name: 'Français', flag: '🇫🇷' },
@@ -281,6 +281,9 @@ export class AudioguideApp {
       if (subEl && mon.subtitle) subEl.textContent = mon.subtitle;
       if (heroEl && mon.cover_image) {
         heroEl.style.backgroundImage = `url('${mon.cover_image}')`;
+      }
+      if (mon.name) {
+        document.title = `Audioguide - ${mon.name}`;
       }
     }
 

@@ -18,10 +18,7 @@ export const APP_SHELL = [
   './js/icons.js',
   './js/vendor/marked.min.js',
   './js/vendor/js-yaml.min.js',
-  './config.yml',
-  './content/fr/config.yml',
-  './content/en/config.yml',
-  './content/fr/cathedral-cover.jpg'
+  './config.yml'
 ];
 
 /**

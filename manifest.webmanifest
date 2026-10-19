@@ -1,5 +1,5 @@
 {
-  "name": "Audioguide Cathédrale de Tours",
+  "name": "Audioguide",
   "short_name": "Audioguide",
   "description": "Audioguide PWA interactif et hors-ligne pour la visite de monuments historiques",
   "start_url": "./index.html",
