@@ -29,6 +29,7 @@ assert(htmlContent.includes('id="view-step"'), 'index.html must have view-step')
 assert(htmlContent.includes('id="audio-player-bar"'), 'index.html must have audio player bar');
 assert(htmlContent.includes('manifest.webmanifest'), 'index.html must link manifest');
 assert(htmlContent.includes('css/styles.css'), 'index.html must link css/styles.css');
+assert(htmlContent.includes("navigator.serviceWorker.register('./service-worker.js', { type: 'module' })"), 'index.html must register Service Worker as module');
 
 // 3. Verify Icons
 const { getIcon } = await import(`file://${iconsPath}`);

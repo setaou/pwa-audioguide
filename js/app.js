@@ -215,12 +215,19 @@ export class AudioguideApp {
         if (curTimeEl) curTimeEl.textContent = formatTime(targetSecs);
       });
 
-      seekbar.addEventListener('change', (e) => {
+      const finishScrubbing = (e) => {
+        if (!this.isScrubbing) return;
         const duration = this.player.audio ? this.player.audio.duration : 0;
-        const targetSecs = (parseFloat(e.target.value) / 100) * duration;
+        const targetSecs = (parseFloat(seekbar.value) / 100) * duration;
         this.player.seek(targetSecs);
         this.isScrubbing = false;
-      });
+      };
+
+      seekbar.addEventListener('change', finishScrubbing);
+      seekbar.addEventListener('pointerup', finishScrubbing);
+      seekbar.addEventListener('touchend', finishScrubbing);
+      seekbar.addEventListener('pointercancel', () => { this.isScrubbing = false; });
+      seekbar.addEventListener('touchcancel', () => { this.isScrubbing = false; });
     }
 
     // Player state sync
@@ -425,9 +432,13 @@ export class AudioguideApp {
       headingEl.textContent = step.title;
     }
 
-    // Update previous / next button state
+    // Update previous / next button state & localized text
     const prevBtn = document.getElementById('player-btn-prev-step');
     const nextBtn = document.getElementById('player-btn-next-step');
+    const txtPrev = document.getElementById('player-txt-prev');
+    const txtNext = document.getElementById('player-txt-next');
+    if (txtPrev) txtPrev.textContent = this.t('prev');
+    if (txtNext) txtNext.textContent = this.t('next');
     if (prevBtn) prevBtn.disabled = index === 0;
     if (nextBtn) nextBtn.disabled = index === stepIds.length - 1;
 

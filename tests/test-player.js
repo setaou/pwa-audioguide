@@ -75,6 +75,14 @@ class MockAudioElement {
 const mockAudio = new MockAudioElement();
 const player = new AudioPlayer({ audioElement: mockAudio });
 
+let metadataUpdated = false;
+player.onTimeUpdate = (cur, dur) => {
+  if (dur === 180) metadataUpdated = true;
+};
+
+mockAudio.emit('loadedmetadata');
+assert.strictEqual(metadataUpdated, true, 'loadedmetadata must trigger onTimeUpdate with duration');
+
 player.loadStep({
   webm: 'facade.webm',
   m4a: 'facade.m4a'

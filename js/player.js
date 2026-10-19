@@ -41,6 +41,8 @@ export class AudioPlayer {
 
   _attachListeners() {
     this.audio.addEventListener('timeupdate', this._boundTimeUpdate);
+    this.audio.addEventListener('loadedmetadata', this._boundTimeUpdate);
+    this.audio.addEventListener('durationchange', this._boundTimeUpdate);
     this.audio.addEventListener('play', this._boundStateChange);
     this.audio.addEventListener('pause', this._boundStateChange);
     this.audio.addEventListener('ended', this._boundEnded);
@@ -50,6 +52,8 @@ export class AudioPlayer {
   _detachListeners() {
     if (!this.audio) return;
     this.audio.removeEventListener('timeupdate', this._boundTimeUpdate);
+    this.audio.removeEventListener('loadedmetadata', this._boundTimeUpdate);
+    this.audio.removeEventListener('durationchange', this._boundTimeUpdate);
     this.audio.removeEventListener('play', this._boundStateChange);
     this.audio.removeEventListener('pause', this._boundStateChange);
     this.audio.removeEventListener('ended', this._boundEnded);

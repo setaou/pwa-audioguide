@@ -4,9 +4,9 @@
  * synthesis for audio seek requests on cached media.
  */
 
-const CACHE_NAME = 'audioguide-v1';
+export const CACHE_NAME = 'audioguide-v1';
 
-const APP_SHELL = [
+export const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
@@ -18,7 +18,10 @@ const APP_SHELL = [
   './js/icons.js',
   './js/vendor/marked.min.js',
   './js/vendor/js-yaml.min.js',
-  './config.yml'
+  './config.yml',
+  './content/fr/config.yml',
+  './content/en/config.yml',
+  './content/fr/cathedral-cover.jpg'
 ];
 
 /**
@@ -139,7 +142,17 @@ if (typeof self !== 'undefined' && typeof self.addEventListener === 'function' &
           if (rangeHeader) {
             // Synthesize partial 206 from cached response for seeking
             const buffer = await cachedResponse.arrayBuffer();
-            const contentType = cachedResponse.headers.get('Content-Type') || 'audio/webm';
+            let contentType = cachedResponse.headers.get('Content-Type');
+            if (!contentType) {
+              const url = request.url.toLowerCase();
+              if (url.endsWith('.m4a') || url.endsWith('.mp4')) {
+                contentType = 'audio/mp4';
+              } else if (url.endsWith('.webm')) {
+                contentType = 'audio/webm; codecs=opus';
+              } else {
+                contentType = 'audio/webm';
+              }
+            }
             return buildRangeResponse(buffer, rangeHeader, contentType);
           }
           return cachedResponse;
