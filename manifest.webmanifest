@@ -1,0 +1,17 @@
+{
+  "name": "Audioguide Cathédrale de Tours",
+  "short_name": "Audioguide",
+  "description": "Audioguide PWA interactif et hors-ligne pour la visite de monuments historiques",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Cpath d='M256 120a136 136 0 0 0-136 136v72a48 48 0 0 0 48 48h16a16 16 0 0 0 16-16v-80a16 16 0 0 0-16-16h-44v-8a116 116 0 1 1 232 0v8h-44a16 16 0 0 0-16 16v80a16 16 0 0 0 16 16h16a48 48 0 0 0 48-48v-72a136 136 0 0 0-136-136z' fill='white'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

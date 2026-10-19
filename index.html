@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Audioguide - Cathédrale Saint-Gatien de Tours</title>
+  
+  <meta name="theme-color" content="#1e293b">
+  <meta name="description" content="Audioguide PWA interactif et hors-ligne pour la visite de monuments historiques">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Cpath d='M256 120a136 136 0 0 0-136 136v72a48 48 0 0 0 48 48h16a16 16 0 0 0 16-16v-80a16 16 0 0 0-16-16h-44v-8a116 116 0 1 1 232 0v8h-44a16 16 0 0 0-16 16v80a16 16 0 0 0 16 16h16a48 48 0 0 0 48-48v-72a136 136 0 0 0-136-136z' fill='white'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%232563eb'/%3E%3Cpath d='M256 120a136 136 0 0 0-136 136v72a48 48 0 0 0 48 48h16a16 16 0 0 0 16-16v-80a16 16 0 0 0-16-16h-44v-8a116 116 0 1 1 232 0v8h-44a16 16 0 0 0-16 16v80a16 16 0 0 0 16 16h16a48 48 0 0 0 48-48v-72a136 136 0 0 0-136-136z' fill='white'/%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app-container">
+
+    <!-- ====================================================================
+         VIEW 1: HOME
+         ==================================================================== -->
+    <main id="view-home" class="view-section active">
+      <header class="home-hero" id="home-hero-bg">
+        <div class="home-hero-content">
+          <span class="monument-badge" id="monument-badge">Monument Historique</span>
+          <h1 class="monument-title" id="monument-title">Cathédrale Saint-Gatien</h1>
+          <p class="monument-subtitle" id="monument-subtitle">Tours, Val de Loire</p>
+        </div>
+      </header>
+
+      <section class="home-body">
+        <div class="language-selector-section">
+          <label class="section-label" id="label-select-language">Choisir la langue / Select language</label>
+          <div class="languages-grid" id="languages-grid">
+            <!-- Dynamically populated from config.yml -->
+          </div>
+        </div>
+
+        <div class="home-info-box">
+          <span style="font-size: 20px;">🎧</span>
+          <div>
+            <strong id="home-headphones-tip">Visite avec oreillettes</strong>
+            <p id="home-offline-tip" style="margin-top: 2px;">Fonctionne 100% hors-ligne. Branchez vos écouteurs et laissez-vous guider au fil des étapes.</p>
+          </div>
+        </div>
+
+        <button id="btn-start-tours" class="home-cta-btn">
+          <span id="txt-start-tours">Découvrir les parcours de visite</span>
+          <span>→</span>
+        </button>
+      </section>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 2: TOUR SELECTION
+         ==================================================================== -->
+    <main id="view-tours" class="view-section">
+      <header class="view-header">
+        <button id="btn-tours-back" class="nav-back-btn" aria-label="Retour à l'accueil">
+          <!-- Chevron icon injected -->
+        </button>
+        <h2 class="view-header-title" id="tours-header-title">Parcours de visite</h2>
+      </header>
+
+      <section class="tours-list-container" id="tours-list">
+        <!-- Dynamically populated from content/<lang>/config.yml -->
+      </section>
+    </main>
+
+    <!-- ====================================================================
+         VIEW 3: STEP VIEW
+         ==================================================================== -->
+    <main id="view-step" class="view-section">
+      <header class="step-top-bar">
+        <button id="btn-step-back-tours" class="nav-back-btn" aria-label="Retour aux parcours">
+          <!-- Chevron icon injected -->
+        </button>
+        <select id="step-selector-select" class="step-selector-select" aria-label="Choisir une étape">
+          <!-- Dynamically populated with step titles -->
+        </select>
+      </header>
+
+      <article class="step-content-area">
+        <span class="step-indicator-badge" id="step-indicator-badge">Étape 1 sur 5</span>
+        <h2 class="step-heading" id="step-heading">Titre de l'étape</h2>
+        <div class="step-body-markdown" id="step-body-markdown">
+          <!-- Rendered markdown text with carousels -->
+        </div>
+      </article>
+    </main>
+
+    <!-- ====================================================================
+         STICKY BOTTOM AUDIO PLAYER
+         ==================================================================== -->
+    <footer id="audio-player-bar" style="display: none;">
+      <!-- Progress row -->
+      <div class="player-progress-container">
+        <span class="player-time" id="player-time-current">00:00</span>
+        <input type="range" id="player-seekbar" class="player-seekbar" min="0" max="100" value="0" step="0.1" aria-label="Progression audio">
+        <span class="player-time" id="player-time-duration">00:00</span>
+      </div>
+
+      <!-- Controls row -->
+      <div class="player-controls-row">
+        <button id="player-btn-prev-step" class="player-step-btn" title="Étape précédente">
+          <span id="player-icon-prev"></span>
+          <span id="player-txt-prev">Préc</span>
+        </button>
+
+        <div class="player-center-controls">
+          <button id="player-btn-skip-back" class="player-skip-btn" title="Reculer de 10 secondes" aria-label="Reculer de 10 secondes">
+            <!-- -10s icon -->
+          </button>
+
+          <button id="player-btn-play" class="player-play-btn" title="Lecture / Pause" aria-label="Lecture ou pause">
+            <!-- Play / Pause icon -->
+          </button>
+
+          <button id="player-btn-skip-forward" class="player-skip-btn" title="Avancer de 10 secondes" aria-label="Avancer de 10 secondes">
+            <!-- +10s icon -->
+          </button>
+        </div>
+
+        <button id="player-btn-next-step" class="player-step-btn" title="Étape suivante">
+          <span id="player-txt-next">Suiv</span>
+          <span id="player-icon-next"></span>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Vendors -->
+  <script src="js/vendor/marked.min.js"></script>
+  <script src="js/vendor/js-yaml.min.js"></script>
+
+  <!-- Application Bootstrap -->
+  <script type="module">
+    import { AudioguideApp } from './js/app.js';
+    window.audioguideApp = new AudioguideApp();
+    window.audioguideApp.init();
+
+    // Register Service Worker for offline capability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+          .catch(err => console.warn('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
