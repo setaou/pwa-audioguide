@@ -206,35 +206,72 @@ def write_markdown_files():
                 f.write(data['text'].strip() + '\n')
             print(f"  -> Wrote {md_path}")
 
+def get_kokoro_model():
+    models_dir = os.path.join(ROOT_DIR, '.cache', 'kokoro')
+    os.makedirs(models_dir, exist_ok=True)
+    model_path = os.path.join(models_dir, 'kokoro-v1.0.onnx')
+    voices_path = os.path.join(models_dir, 'voices-v1.0.bin')
+
+    # Copy from /tmp if already downloaded, or download
+    if not os.path.exists(voices_path) or os.path.getsize(voices_path) < 1000:
+        if os.path.exists('/tmp/kokoro_models/voices-v1.0.bin'):
+            shutil.copyfile('/tmp/kokoro_models/voices-v1.0.bin', voices_path)
+        else:
+            print("Downloading Kokoro voices pack...")
+            urllib.request.urlretrieve(
+                'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin',
+                voices_path
+            )
+
+    if not os.path.exists(model_path) or os.path.getsize(model_path) < 1000:
+        if os.path.exists('/tmp/kokoro_models/kokoro-v1.0.onnx'):
+            shutil.copyfile('/tmp/kokoro_models/kokoro-v1.0.onnx', model_path)
+        else:
+            print("Downloading Kokoro ONNX model (300MB)...")
+            urllib.request.urlretrieve(
+                'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx',
+                model_path
+            )
+
+    from kokoro_onnx import Kokoro
+    return Kokoro(model_path, voices_path)
+
 def generate_audio_files():
-    print("Generating WebM (Opus) and M4A (AAC) audio files via espeak and ffmpeg...")
+    print("Generating high-fidelity neural audio files via Kokoro TTS (Kokoro-82M)...")
+    import soundfile as sf
+    kokoro = get_kokoro_model()
+
     for lang, steps in STEPS_DATA.items():
         lang_dir = os.path.join(CONTENT_DIR, lang)
-        voice = 'fr' if lang == 'fr' else 'en-us'
+        voice = 'ff_siwis' if lang == 'fr' else 'af_heart'
+        lang_code = 'fr-fr' if lang == 'fr' else 'en-us'
 
         for step_id, data in steps.items():
             narration = data['narration']
-            temp_wav = f"/tmp/narrate_{lang}_{step_id}.wav"
+            temp_wav = f"/tmp/kokoro_{lang}_{step_id}.wav"
             webm_dest = os.path.join(lang_dir, f"{step_id}.webm")
             m4a_dest = os.path.join(lang_dir, f"{step_id}.m4a")
 
-            print(f"  -> Synthesizing voice for [{lang}] {step_id}...")
-            # 1. Generate WAV with espeak
-            subprocess.run([
-                'espeak', '-v', voice, '-s', '140', '-w', temp_wav, narration
-            ], check=True)
+            print(f"  -> Synthesizing Kokoro voice for [{lang}] {step_id} (voice: {voice})...")
+            samples, sample_rate = kokoro.create(
+                narration,
+                voice=voice,
+                lang=lang_code,
+                speed=1.0
+            )
+            sf.write(temp_wav, samples, sample_rate)
 
             # 2. Encode to WebM Opus with ffmpeg
             subprocess.run([
                 'ffmpeg', '-y', '-i', temp_wav,
-                '-c:a', 'libopus', '-b:a', '48k',
+                '-c:a', 'libopus', '-b:a', '64k',
                 webm_dest
             ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
             # 3. Encode to M4A AAC with ffmpeg
             subprocess.run([
                 'ffmpeg', '-y', '-i', temp_wav,
-                '-c:a', 'aac', '-b:a', '64k',
+                '-c:a', 'aac', '-b:a', '96k',
                 m4a_dest
             ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 

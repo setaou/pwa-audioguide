@@ -1,2 +1,4 @@
 .superpowers/
 .SPECS.swp
+.venv/
+.cache/
