@@ -231,4 +231,12 @@ assert.strictEqual(fallbackTestApp.t('start_tours'), 'Découvrir les parcours', 
 assert.strictEqual(fallbackTestApp.t('tours_title'), 'Tour Circuits', 'Should fallback to fallback language when key is missing');
 assert.strictEqual(fallbackTestApp.t('steps_count', 4), '4 steps', 'Should fallback and interpolate with fallback language');
 
+// 11. Test dev mode (?dev=1)
+assert(htmlContent.includes("new URLSearchParams(window.location.search).get('dev') === '1'"), 'index.html must check strictly for ?dev=1');
+assert(htmlContent.includes('reg.unregister()'), 'index.html must unregister Service Worker in dev mode');
+assert(htmlContent.includes('caches.delete'), 'index.html must clear caches in dev mode');
+
+const devApp = new AudioguideApp({ isDevMode: true });
+assert.strictEqual(devApp.isDevMode, true, 'App should recognize isDevMode flag');
+
 console.log('✓ test-app-flow passed successfully!');

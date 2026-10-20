@@ -137,16 +137,35 @@
   <!-- Application Bootstrap -->
   <script type="module">
     import { AudioguideApp } from './js/app.js';
-    window.audioguideApp = new AudioguideApp();
+    const isDev = typeof window !== 'undefined' && typeof window.location !== 'undefined'
+      && new URLSearchParams(window.location.search).get('dev') === '1';
+
+    window.audioguideApp = new AudioguideApp({ isDevMode: isDev });
     window.audioguideApp.init();
 
-    // Register Service Worker for offline capability
+    // Service Worker management: disabled in dev mode (?dev=1), enabled otherwise
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js', { type: 'module' })
-          .then(reg => console.log('PWA Service Worker registered:', reg.scope))
-          .catch(err => console.warn('Service Worker registration failed:', err));
-      });
+      if (isDev) {
+        console.info('🛠️ Mode dev actif (?dev=1) : Service Worker désactivé et caches purgés.');
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (const reg of regs) {
+            reg.unregister();
+          }
+        });
+        if ('caches' in window) {
+          caches.keys().then(keys => {
+            for (const key of keys) {
+              caches.delete(key);
+            }
+          });
+        }
+      } else {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js', { type: 'module' })
+            .then(reg => console.log('PWA Service Worker registered:', reg.scope))
+            .catch(err => console.warn('Service Worker registration failed:', err));
+        });
+      }
     }
   </script>
 </body>

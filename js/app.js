@@ -9,8 +9,13 @@ import { getIcon } from './icons.js';
 
 export class AudioguideApp {
   constructor(options = {}) {
-    this.storage = options.localStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
+    this.storage = options.localStorage || (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function' ? localStorage : null);
     this.yamlParser = options.yamlParser || globalThis.jsyaml || null;
+    this.isDevMode = options.isDevMode !== undefined
+      ? Boolean(options.isDevMode)
+      : (typeof window !== 'undefined' && typeof window.location !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('dev') === '1'
+          : false);
 
     this.currentView = 'home';
     this.currentLanguage = this.getSavedLanguage() || 'fr';
@@ -28,12 +33,14 @@ export class AudioguideApp {
   }
 
   getSavedLanguage() {
-    return this.storage ? this.storage.getItem('audioguide_lang') : null;
+    return (this.storage && typeof this.storage.getItem === 'function')
+      ? this.storage.getItem('audioguide_lang')
+      : null;
   }
 
   setLanguage(langCode) {
     this.currentLanguage = langCode;
-    if (this.storage) {
+    if (this.storage && typeof this.storage.setItem === 'function') {
       this.storage.setItem('audioguide_lang', langCode);
     }
   }
@@ -88,7 +95,8 @@ export class AudioguideApp {
   }
 
   async loadYaml(url) {
-    const res = await fetch(url);
+    const fetchOptions = this.isDevMode ? { cache: 'no-cache' } : {};
+    const res = await fetch(url, fetchOptions);
     if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
     let text = await res.text();
     if (url.endsWith('.md')) {
@@ -568,8 +576,9 @@ export class AudioguideApp {
       if (markdownContainer) {
         markdownContainer.innerHTML = `<p>${this.t('stepLoading')}</p>`;
         const basePath = `content/${this.currentLanguage}/`;
+        const fetchOptions = this.isDevMode ? { cache: 'no-cache' } : {};
         try {
-          const res = await fetch(`${basePath}${step.text_file}`);
+          const res = await fetch(`${basePath}${step.text_file}`, fetchOptions);
           if (res.ok) {
             const rawMd = await res.text();
             markdownContainer.innerHTML = renderMarkdownWithCarousels(rawMd, basePath, {
