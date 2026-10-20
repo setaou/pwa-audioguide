@@ -26,7 +26,7 @@ export class AudioguideApp {
     this.currentTour = null;
     this.currentStepIndex = 0;
 
-    this.player = new AudioPlayer();
+    this.player = new AudioPlayer({ isDevMode: this.isDevMode });
     this.preloader = new TourPreloader();
 
     this.isScrubbing = false;

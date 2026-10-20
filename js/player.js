@@ -22,12 +22,17 @@ function resolveAssetPath(src, basePath) {
 export class AudioPlayer {
   constructor(options = {}) {
     this.audio = options.audioElement || (typeof Audio !== 'undefined' ? new Audio() : null);
+    this.isDevMode = Boolean(options.isDevMode);
     this.sources = [];
     this.onTimeUpdate = null;
     this.onStateChange = null;
     this.onEnded = null;
     this.onNextStepRequested = null;
     this.onError = null;
+
+    this._currentBlobUrl = null;
+    this._loadPromise = null;
+    this._loadId = 0;
 
     this._boundTimeUpdate = this._handleTimeUpdate.bind(this);
     this._boundStateChange = this._handleStateChange.bind(this);
@@ -66,10 +71,20 @@ export class AudioPlayer {
     this.pause();
     this.sources = [];
 
+    if (this._currentBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(this._currentBlobUrl);
+      this._currentBlobUrl = null;
+    }
+    this._loadPromise = null;
+    this._loadId++;
+
     if (!audioConfig) {
       if (this.audio) {
         if (typeof this.audio.innerHTML !== 'undefined') {
           this.audio.innerHTML = '';
+        }
+        if (this.audio.src) {
+          this.audio.src = '';
         }
         if (typeof this.audio.load === 'function') {
           this.audio.load();
@@ -110,24 +125,61 @@ export class AudioPlayer {
 
     if (!this.audio) return;
 
-    // In a real browser DOM, clear and append <source> tags
-    if (typeof this.audio.innerHTML !== 'undefined') {
-      this.audio.innerHTML = '';
-      this.sources.forEach(source => {
-        const sourceEl = document.createElement('source');
-        sourceEl.src = source.src;
-        sourceEl.type = source.type;
-        this.audio.appendChild(sourceEl);
-      });
-    } else {
-      // In mock/test environments
-      this.sources.forEach(source => {
-        this.audio.appendChild(source);
-      });
-    }
+    if (this.isDevMode && typeof fetch === 'function' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+      const chosenSource = this.sources.find(s => {
+        if (typeof this.audio.canPlayType === 'function') {
+          const support = this.audio.canPlayType(s.type);
+          return support === 'probably' || support === 'maybe';
+        }
+        return true;
+      }) || this.sources[0];
 
-    if (typeof this.audio.load === 'function') {
-      this.audio.load();
+      if (chosenSource) {
+        const loadId = this._loadId;
+        this._loadPromise = (async () => {
+          try {
+            const res = await fetch(chosenSource.src, { cache: 'no-cache' });
+            if (!res.ok || loadId !== this._loadId) return;
+            const blob = await res.blob();
+            if (loadId !== this._loadId) return;
+            if (this._currentBlobUrl && typeof URL.revokeObjectURL === 'function') {
+              URL.revokeObjectURL(this._currentBlobUrl);
+            }
+            this._currentBlobUrl = URL.createObjectURL(blob);
+            if (this.audio) {
+              if (typeof this.audio.innerHTML !== 'undefined') {
+                this.audio.innerHTML = '';
+              }
+              this.audio.src = this._currentBlobUrl;
+              if (typeof this.audio.load === 'function') {
+                this.audio.load();
+              }
+            }
+          } catch (err) {
+            if (this.onError) this.onError(err);
+          }
+        })();
+      }
+    } else {
+      // In a real browser DOM, clear and append <source> tags
+      if (typeof this.audio.innerHTML !== 'undefined') {
+        this.audio.innerHTML = '';
+        this.sources.forEach(source => {
+          const sourceEl = document.createElement('source');
+          sourceEl.src = source.src;
+          sourceEl.type = source.type;
+          this.audio.appendChild(sourceEl);
+        });
+      } else {
+        // In mock/test environments
+        this.sources.forEach(source => {
+          this.audio.appendChild(source);
+        });
+      }
+
+      if (typeof this.audio.load === 'function') {
+        this.audio.load();
+      }
     }
 
     if (this.onTimeUpdate) {
@@ -149,6 +201,9 @@ export class AudioPlayer {
   }
 
   async play() {
+    if (this._loadPromise) {
+      await this._loadPromise;
+    }
     if (!this.audio) return;
     try {
       await this.audio.play();
@@ -221,6 +276,10 @@ export class AudioPlayer {
 
   destroy() {
     this.pause();
+    if (this._currentBlobUrl && typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+      URL.revokeObjectURL(this._currentBlobUrl);
+      this._currentBlobUrl = null;
+    }
     this._detachListeners();
   }
 }

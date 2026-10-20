@@ -238,5 +238,6 @@ assert(htmlContent.includes('caches.delete'), 'index.html must clear caches in d
 
 const devApp = new AudioguideApp({ isDevMode: true });
 assert.strictEqual(devApp.isDevMode, true, 'App should recognize isDevMode flag');
+assert.strictEqual(devApp.player.isDevMode, true, 'AudioPlayer should inherit isDevMode from AudioguideApp');
 
 console.log('✓ test-app-flow passed successfully!');

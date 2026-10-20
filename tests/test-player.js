@@ -153,4 +153,63 @@ mockAudio.emit('ended');
 assert.strictEqual(player.isPlaying(), false, 'Player must be stopped when audio ends');
 assert.strictEqual(autoAdvanced, false, 'Audio player must NOT auto-advance when ended');
 
+// 6. Test dev mode audio loading via Blob URL for seekability without Range server
+{
+  const mockDevAudio = new MockAudioElement();
+  mockDevAudio.canPlayType = (type) => type.includes('webm') ? 'probably' : '';
+  let revokedUrls = [];
+  const origRevoke = URL.revokeObjectURL;
+  URL.revokeObjectURL = (url) => {
+    revokedUrls.push(url);
+    if (origRevoke) origRevoke(url);
+  };
+
+  const origFetch = globalThis.fetch;
+  let fetchedUrls = [];
+  globalThis.fetch = async (url, opts) => {
+    fetchedUrls.push({ url, opts });
+    return {
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(['mock-audio'], { type: 'audio/webm' })
+    };
+  };
+
+  try {
+    const devPlayer = new AudioPlayer({ audioElement: mockDevAudio, isDevMode: true });
+    assert.strictEqual(devPlayer.isDevMode, true, 'devPlayer must have isDevMode true');
+
+    devPlayer.loadStep({
+      webm: 'facade.webm',
+      m4a: 'facade.m4a'
+    }, 'content/fr/');
+
+    await devPlayer.play();
+
+    assert.strictEqual(fetchedUrls.length, 1, 'Should fetch audio file in dev mode');
+    assert.strictEqual(fetchedUrls[0].url, 'content/fr/facade.webm');
+    assert.deepStrictEqual(fetchedUrls[0].opts, { cache: 'no-cache' });
+    assert(mockDevAudio.src && mockDevAudio.src.startsWith('blob:'), 'mockDevAudio.src must be set to a blob: URL');
+
+    const firstBlobUrl = mockDevAudio.src;
+
+    // Load next step: previous blob URL must be revoked
+    devPlayer.loadStep({
+      webm: 'choir.webm',
+      m4a: 'choir.m4a'
+    }, 'content/fr/');
+    await devPlayer.play();
+
+    assert(revokedUrls.includes(firstBlobUrl), 'Previous Blob URL must be revoked on step change');
+    const secondBlobUrl = mockDevAudio.src;
+
+    // destroy() must revoke current blob URL
+    devPlayer.destroy();
+    assert(revokedUrls.includes(secondBlobUrl), 'Current Blob URL must be revoked on destroy()');
+  } finally {
+    globalThis.fetch = origFetch;
+    URL.revokeObjectURL = origRevoke;
+  }
+}
+
 console.log('✓ test-player passed successfully!');
