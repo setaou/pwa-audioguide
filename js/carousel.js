@@ -110,6 +110,48 @@ export function initCarousels(containerElement) {
     const dots = carousel.querySelectorAll('.carousel-dot');
     const prevBtn = carousel.querySelector('.carousel-prev');
     const nextBtn = carousel.querySelector('.carousel-next');
+    const track = carousel.querySelector('.carousel-track');
+    const images = Array.from(carousel.querySelectorAll('.carousel-slide img'));
+    const caption = carousel.querySelector('.carousel-caption');
+
+    // Dynamic track height calculation based on real max aspect ratio of images (capped at 40vh)
+    function updateTrackHeight() {
+      if (!track || images.length === 0) return;
+      const containerWidth = carousel.clientWidth || (track.parentElement ? track.parentElement.clientWidth : 0) || 360;
+      const vh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 800;
+      const maxAllowedImgHeight = Math.round(vh * 0.40);
+
+      let maxCalculatedHeight = 0;
+      images.forEach((img) => {
+        if (img.naturalWidth && img.naturalHeight) {
+          const aspectHeight = (containerWidth * img.naturalHeight) / img.naturalWidth;
+          const clamped = Math.min(aspectHeight, maxAllowedImgHeight);
+          if (clamped > maxCalculatedHeight) {
+            maxCalculatedHeight = clamped;
+          }
+        }
+      });
+
+      if (maxCalculatedHeight > 0) {
+        const captionHeight = (caption && caption.offsetHeight) ? caption.offsetHeight : 32;
+        track.style.height = `${Math.round(maxCalculatedHeight + captionHeight)}px`;
+      }
+    }
+
+    updateTrackHeight();
+
+    images.forEach((img) => {
+      if (!img.complete) {
+        img.addEventListener('load', updateTrackHeight, { once: true });
+      }
+    });
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => updateTrackHeight());
+      ro.observe(carousel);
+    } else if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('resize', updateTrackHeight);
+    }
 
     if (slides.length <= 1) return;
 

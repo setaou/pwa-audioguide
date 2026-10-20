@@ -9,9 +9,10 @@ const carouselModulePath = path.join(rootDir, 'js/carousel.js');
 assert(fs.existsSync(markedPath), 'js/vendor/marked.min.js must exist');
 assert(fs.existsSync(carouselModulePath), 'js/carousel.js must exist');
 
-const { renderMarkdownWithCarousels } = await import(`file://${carouselModulePath}`);
+const { renderMarkdownWithCarousels, initCarousels } = await import(`file://${carouselModulePath}`);
 
 assert(typeof renderMarkdownWithCarousels === 'function', 'renderMarkdownWithCarousels must be a function');
+assert(typeof initCarousels === 'function', 'initCarousels must be a function');
 
 // Test Case 1: Consecutive images get converted into carousel
 const markdownWithCarousel = `
@@ -52,5 +53,55 @@ const htmlWithSingle = renderMarkdownWithCarousels(markdownWithSingleImage, 'con
 assert(!htmlWithSingle.includes('carousel-container'), 'Single image must NOT be wrapped in carousel-container');
 assert(htmlWithSingle.includes('src="content/fr/organ.jpg"'), 'Single image must resolve with basePath');
 assert(htmlWithSingle.includes('Grand orgue de la Renaissance'), 'Single image caption must be present');
+
+// Test Case 3: initCarousels calculates dynamic track height based on real image aspect ratios
+// Mock window.innerHeight = 800px (40vh = 320px)
+globalThis.window = { innerHeight: 800 };
+
+const mockTrack = {
+  style: {}
+};
+const mockImg1 = {
+  naturalWidth: 800,
+  naturalHeight: 600, // 4:3 -> at 360px width => 270px height (<= 320px max)
+  complete: true,
+  addEventListener: () => {}
+};
+const mockImg2 = {
+  naturalWidth: 1200,
+  naturalHeight: 600, // 2:1 -> at 360px width => 180px height
+  complete: true,
+  addEventListener: () => {}
+};
+const mockSlide1 = { classList: { toggle: () => {} } };
+const mockSlide2 = { classList: { toggle: () => {} } };
+const mockCaption = { offsetHeight: 32 };
+
+const mockCarousel = {
+  clientWidth: 360,
+  querySelector: (sel) => {
+    if (sel === '.carousel-track') return mockTrack;
+    if (sel === '.carousel-caption') return mockCaption;
+    return null;
+  },
+  querySelectorAll: (sel) => {
+    if (sel === '.carousel-slide') return [mockSlide1, mockSlide2];
+    if (sel === '.carousel-slide img') return [mockImg1, mockImg2];
+    if (sel === '.carousel-dot') return [];
+    return [];
+  },
+  addEventListener: () => {}
+};
+const mockContainer = {
+  querySelectorAll: (sel) => {
+    if (sel === '[data-carousel]') return [mockCarousel];
+    return [];
+  }
+};
+
+initCarousels(mockContainer);
+
+// Expected height: max(270, 180) + 32px caption = 302px
+assert.strictEqual(mockTrack.style.height, '302px', 'Track height should be dynamically set to 302px');
 
 console.log('✓ test-carousel passed successfully!');
