@@ -105,6 +105,16 @@ npx serve -l 8080 .
 
 Ouvrez ensuite votre navigateur sur `http://localhost:8080`.
 
+### 🛠️ Mode Développement (`?dev=1`)
+
+Pour modifier le code, les textes Markdown ou les configurations YAML sans interférence de cache :
+
+Ouvrez simplement : **`http://localhost:8080/?dev=1`**
+
+Ce mode active automatiquement des comportements adaptés au développement local :
+- **Désactivation du Service Worker & purge du cache :** Désenregistre les Service Workers actifs, supprime les entrées `CacheStorage` et force les requêtes en `cache: 'no-cache'`. Toute modification de fichier est visible immédiatement après actualisation.
+- **Support du déplacement audio (seeking) sur serveurs basiques :** Les serveurs locaux légers (comme `python3 -m http.server`) ne supportent pas les en-têtes HTTP `Range` (`206 Partial Content`). En mode dev, le lecteur audio télécharge la piste sous forme de `Blob` mémoire (`URL.createObjectURL`), permettant le déplacement temporel (scrubbing / seeking) sans nécessiter de serveur compatible Range.
+
 ### Installation sur Smartphone (PWA)
 1. Ouvrez l'URL sur Chrome (Android) ou Safari (iOS).
 2. Choisissez **"Ajouter à l'écran d'accueil"** (ou "Installer l'application").
