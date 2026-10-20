@@ -54,6 +54,9 @@ Démonstration préconfigurée : **Cathédrale Saint-Gatien de Tours** (Val de L
 
 ```
 audioguide/
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # Pipeline GitHub Actions (tests unitaires & E2E)
 ├── .gitignore                  # Fichiers et dossiers ignorés par git
 ├── config.yml                  # Configuration générale du monument & langues
 ├── index.html                  # Interface SPA de l'application PWA
