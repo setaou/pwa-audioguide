@@ -61,4 +61,27 @@ assert.strictEqual(fakeLocalStorage.getItem('audioguide_lang'), 'en');
 app.navigateTo('tours');
 assert.strictEqual(app.currentView, 'tours');
 
+// 5. Verify Player pause on navigation and step change
+let playerPaused = false;
+app.player = {
+  pause: () => { playerPaused = true; },
+  loadStep: () => {}
+};
+
+app.currentTour = { id: 'tour-1', steps: ['step-1', 'step-2'] };
+app.langConfig = {
+  steps: [
+    { id: 'step-1', title: 'Step 1' },
+    { id: 'step-2', title: 'Step 2' }
+  ]
+};
+
+playerPaused = false;
+await app.loadStepByIndex(1);
+assert.strictEqual(playerPaused, true, 'loadStepByIndex must immediately pause audio playback');
+
+playerPaused = false;
+app.navigateTo('home');
+assert.strictEqual(playerPaused, true, 'Navigating away from step must pause audio playback');
+
 console.log('✓ test-app-flow passed successfully!');

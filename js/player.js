@@ -45,6 +45,7 @@ export class AudioPlayer {
     this.audio.addEventListener('durationchange', this._boundTimeUpdate);
     this.audio.addEventListener('play', this._boundStateChange);
     this.audio.addEventListener('pause', this._boundStateChange);
+    this.audio.addEventListener('emptied', this._boundStateChange);
     this.audio.addEventListener('ended', this._boundEnded);
     this.audio.addEventListener('error', this._boundError);
   }
@@ -56,6 +57,7 @@ export class AudioPlayer {
     this.audio.removeEventListener('durationchange', this._boundTimeUpdate);
     this.audio.removeEventListener('play', this._boundStateChange);
     this.audio.removeEventListener('pause', this._boundStateChange);
+    this.audio.removeEventListener('emptied', this._boundStateChange);
     this.audio.removeEventListener('ended', this._boundEnded);
     this.audio.removeEventListener('error', this._boundError);
   }
@@ -64,7 +66,23 @@ export class AudioPlayer {
     this.pause();
     this.sources = [];
 
-    if (!audioConfig) return;
+    if (!audioConfig) {
+      if (this.audio) {
+        if (typeof this.audio.innerHTML !== 'undefined') {
+          this.audio.innerHTML = '';
+        }
+        if (typeof this.audio.load === 'function') {
+          this.audio.load();
+        }
+      }
+      if (this.onTimeUpdate) {
+        this.onTimeUpdate(0, 0, 0);
+      }
+      if (this.onStateChange) {
+        this.onStateChange(false);
+      }
+      return;
+    }
 
     // Prefer WebM (Opus) as primary source
     if (audioConfig.webm) {
@@ -115,6 +133,10 @@ export class AudioPlayer {
     if (this.onTimeUpdate) {
       this.onTimeUpdate(0, this.audio.duration || 0, 0);
     }
+
+    if (this.onStateChange) {
+      this.onStateChange(false);
+    }
   }
 
   getSources() {
@@ -138,6 +160,9 @@ export class AudioPlayer {
   pause() {
     if (!this.audio) return;
     this.audio.pause();
+    if (this.onStateChange) {
+      this.onStateChange(false);
+    }
   }
 
   togglePlay() {

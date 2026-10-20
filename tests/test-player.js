@@ -62,11 +62,20 @@ class MockAudioElement {
 
   pause() {
     this.paused = true;
-    this.emit('pause');
+    this._pendingPause = true;
+    queueMicrotask(() => {
+      if (this._pendingPause) {
+        this._pendingPause = false;
+        this.emit('pause');
+      }
+    });
   }
 
   load() {
+    // According to HTML5 spec, load() empties task queue and emits emptied
+    this._pendingPause = false;
     this.currentTime = 0;
+    this.emit('emptied');
     this.emit('loadedmetadata');
   }
 }
@@ -104,6 +113,19 @@ assert.strictEqual(player.isPlaying(), true);
 
 player.pause();
 assert.strictEqual(player.isPlaying(), false);
+
+// Test: loadStep while playing must stop playback and emit onStateChange(false)
+await player.play();
+assert.strictEqual(player.isPlaying(), true);
+stateEvents = [];
+
+player.loadStep({
+  webm: 'choir.webm',
+  m4a: 'choir.m4a'
+}, 'content/fr/');
+
+assert.strictEqual(player.isPlaying(), false, 'Player must be stopped after loadStep');
+assert(stateEvents.length > 0 && stateEvents[stateEvents.length - 1] === false, 'loadStep must emit onStateChange(false)');
 
 // 3. Test skipping & clamping
 mockAudio.currentTime = 50;

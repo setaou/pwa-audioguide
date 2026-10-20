@@ -252,6 +252,9 @@ export class AudioguideApp {
 
   navigateTo(viewName) {
     this.currentView = viewName;
+    if (viewName !== 'step' && this.player) {
+      this.player.pause();
+    }
     if (typeof document === 'undefined') return;
 
     const views = ['home', 'tours', 'step'];
@@ -402,6 +405,10 @@ export class AudioguideApp {
     const stepIds = this.currentTour.steps || [];
     if (index < 0 || index >= stepIds.length) return;
 
+    if (this.player) {
+      this.player.pause();
+    }
+
     this.currentStepIndex = index;
     const stepId = stepIds[index];
 
@@ -410,65 +417,75 @@ export class AudioguideApp {
     const step = stepMap.get(stepId);
     if (!step) return;
 
+    const hasDOM = typeof document !== 'undefined';
+
     // Update Dropdown selector
-    const stepSelect = document.getElementById('step-selector-select');
-    if (stepSelect) {
-      stepSelect.innerHTML = '';
-      stepIds.forEach((id, idx) => {
-        const s = stepMap.get(id);
-        const opt = document.createElement('option');
-        opt.value = idx.toString();
-        opt.textContent = `${idx + 1}. ${s ? s.title : id}`;
-        if (idx === index) opt.selected = true;
-        stepSelect.appendChild(opt);
-      });
-    }
+    if (hasDOM) {
+      const stepSelect = document.getElementById('step-selector-select');
+      if (stepSelect) {
+        stepSelect.innerHTML = '';
+        stepIds.forEach((id, idx) => {
+          const s = stepMap.get(id);
+          const opt = document.createElement('option');
+          opt.value = idx.toString();
+          opt.textContent = `${idx + 1}. ${s ? s.title : id}`;
+          if (idx === index) opt.selected = true;
+          stepSelect.appendChild(opt);
+        });
+      }
 
-    // Update UI headers
-    const badgeEl = document.getElementById('step-indicator-badge');
-    if (badgeEl) {
-      badgeEl.textContent = this.t('stepOf', index + 1, stepIds.length);
-    }
+      // Update UI headers
+      const badgeEl = document.getElementById('step-indicator-badge');
+      if (badgeEl) {
+        badgeEl.textContent = this.t('stepOf', index + 1, stepIds.length);
+      }
 
-    const headingEl = document.getElementById('step-heading');
-    if (headingEl) {
-      headingEl.textContent = step.title;
-    }
+      const headingEl = document.getElementById('step-heading');
+      if (headingEl) {
+        headingEl.textContent = step.title;
+      }
 
-    // Update previous / next button state & localized text
-    const prevBtn = document.getElementById('player-btn-prev-step');
-    const nextBtn = document.getElementById('player-btn-next-step');
-    const txtPrev = document.getElementById('player-txt-prev');
-    const txtNext = document.getElementById('player-txt-next');
-    if (txtPrev) txtPrev.textContent = this.t('prev');
-    if (txtNext) txtNext.textContent = this.t('next');
-    if (prevBtn) prevBtn.disabled = index === 0;
-    if (nextBtn) nextBtn.disabled = index === stepIds.length - 1;
+      // Update previous / next button state & localized text
+      const prevBtn = document.getElementById('player-btn-prev-step');
+      const nextBtn = document.getElementById('player-btn-next-step');
+      const txtPrev = document.getElementById('player-txt-prev');
+      const txtNext = document.getElementById('player-txt-next');
+      if (txtPrev) txtPrev.textContent = this.t('prev');
+      if (txtNext) txtNext.textContent = this.t('next');
+      if (prevBtn) prevBtn.disabled = index === 0;
+      if (nextBtn) nextBtn.disabled = index === stepIds.length - 1;
 
-    // Load and render markdown content with carousels
-    const markdownContainer = document.getElementById('step-body-markdown');
-    if (markdownContainer) {
-      markdownContainer.innerHTML = '<p>Chargement...</p>';
-      const basePath = `content/${this.currentLanguage}/`;
-      try {
-        const res = await fetch(`${basePath}${step.text_file}`);
-        if (res.ok) {
-          const rawMd = await res.text();
-          markdownContainer.innerHTML = renderMarkdownWithCarousels(rawMd, basePath);
-          initCarousels(markdownContainer);
-        } else {
-          markdownContainer.innerHTML = '<p>Texte non disponible.</p>';
+      // Load and render markdown content with carousels
+      const markdownContainer = document.getElementById('step-body-markdown');
+      if (markdownContainer) {
+        markdownContainer.innerHTML = '<p>Chargement...</p>';
+        const basePath = `content/${this.currentLanguage}/`;
+        try {
+          const res = await fetch(`${basePath}${step.text_file}`);
+          if (res.ok) {
+            const rawMd = await res.text();
+            markdownContainer.innerHTML = renderMarkdownWithCarousels(rawMd, basePath);
+            initCarousels(markdownContainer);
+          } else {
+            markdownContainer.innerHTML = '<p>Texte non disponible.</p>';
+          }
+        } catch (err) {
+          markdownContainer.innerHTML = '<p>Erreur lors du chargement de l\'étape.</p>';
         }
-      } catch (err) {
-        markdownContainer.innerHTML = '<p>Erreur lors du chargement de l\'étape.</p>';
       }
     }
 
     // Load Audio in Player
-    if (step.audio) {
-      this.player.loadStep(step.audio, `content/${this.currentLanguage}/`);
+    if (this.player) {
+      if (step.audio) {
+        this.player.loadStep(step.audio, `content/${this.currentLanguage}/`);
+      } else {
+        this.player.loadStep(null);
+      }
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 }
