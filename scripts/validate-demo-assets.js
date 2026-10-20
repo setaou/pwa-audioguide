@@ -6,6 +6,21 @@ const rootDir = process.cwd();
 const languages = ['fr', 'en'];
 const expectedSteps = ['facade', 'nave', 'choir', 'tomb', 'rose'];
 
+// Verify js-yaml and load parser
+const jsYamlPath = path.join(rootDir, 'js/vendor/js-yaml.min.js');
+assert(fs.existsSync(jsYamlPath), 'js/vendor/js-yaml.min.js must exist');
+const jsYamlCode = fs.readFileSync(jsYamlPath, 'utf8');
+const yamlCtx = {};
+new Function('window', 'self', 'globalThis', jsYamlCode)(yamlCtx, yamlCtx, yamlCtx);
+const jsyaml = yamlCtx.jsyaml || globalThis.jsyaml;
+
+// Verify Root config.yml
+const rootConfigPath = path.join(rootDir, 'config.yml');
+assert(fs.existsSync(rootConfigPath), 'Root config.yml must exist');
+const rootConfig = jsyaml.load(fs.readFileSync(rootConfigPath, 'utf8'));
+assert(rootConfig.monument && typeof rootConfig.monument.name === 'string', 'Root config.yml must define monument.name');
+assert(Array.isArray(rootConfig.languages) && rootConfig.languages.length >= 2, 'Root config.yml must define languages');
+
 // Verify cover image
 const coverPath = path.join(rootDir, 'content/fr/cathedral-cover.jpg');
 assert(fs.existsSync(coverPath), 'Cover image content/fr/cathedral-cover.jpg must exist');
@@ -14,6 +29,14 @@ assert(fs.statSync(coverPath).size > 1000, 'Cover image must not be empty');
 for (const lang of languages) {
   const langDir = path.join(rootDir, 'content', lang);
   assert(fs.existsSync(langDir), `Directory content/${lang} must exist`);
+
+  // Verify language config.yml
+  const langConfigPath = path.join(langDir, 'config.yml');
+  assert(fs.existsSync(langConfigPath), `Language config missing: content/${lang}/config.yml`);
+  const langConfig = jsyaml.load(fs.readFileSync(langConfigPath, 'utf8'));
+  assert(langConfig.monument && typeof langConfig.monument.name === 'string', `content/${lang}/config.yml must define monument.name`);
+  assert(Array.isArray(langConfig.tours) && langConfig.tours.length >= 1, `content/${lang}/config.yml must define tours`);
+  assert(Array.isArray(langConfig.steps) && langConfig.steps.length >= 1, `content/${lang}/config.yml must define steps`);
 
   for (const step of expectedSteps) {
     const mdPath = path.join(langDir, `${step}.md`);

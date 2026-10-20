@@ -78,8 +78,8 @@ audioguide/
 │       ├── facade.m4a
 │       └── ...
 ├── scripts/
-│   ├── generate_demo_assets.py # Script de génération des médias démo (TTS + photos)
-│   └── validate-demo-assets.py # Vérification des fichiers et médias réels de démonstration
+│   ├── generate_demo_assets.py # Script de génération des médias et configs démo
+│   └── validate-demo-assets.js # Vérification des fichiers et médias réels de démonstration
 └── tests/
     ├── fixtures/               # Contenu et configurations fictifs pour les tests
     ├── run-all-tests.sh        # Lanceur global de tests (isolé du contenu de démo)
@@ -136,16 +136,23 @@ Le chemin vers le dossier contenant les données de visite peut être personnali
 
 ---
 
-## 🎙️ Médias de Démonstration
+## 🎙️ Médias et Configurations de Démonstration
 
-Pour régénérer les textes, photos Wikimedia et pistes audio synthétisées (TTS espeak + encodage ffmpeg) :
+Pour régénérer les configurations YAML, les textes, photos Wikimedia et pistes audio synthétisées (TTS Kokoro + encodage ffmpeg) :
 
 ```bash
-python3 scripts/generate_demo_assets.py
+# Générer uniquement les fichiers config.yml de démo :
+npm run generate:demo:configs
+# ou : python3 scripts/generate_demo_assets.py --configs-only
+
+# Tout régénérer (configs, photos, textes, audio) :
+npm run generate:demo
+# ou : python3 scripts/generate_demo_assets.py
 ```
 
-Pour valider l'intégrité des médias de démonstration (Tours) :
+Pour valider l'intégrité des médias et configurations de démonstration (Tours) :
 
 ```bash
-node scripts/validate-demo-assets.js
+npm run validate:demo
+# ou : node scripts/validate-demo-assets.js
 ```

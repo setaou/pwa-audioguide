@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Generates authentic demo assets for Tours Cathedral (Cathédrale Saint-Gatien):
-1. Downloads Wikimedia Commons public domain photographs.
-2. Writes comprehensive historical markdown texts with multi-image carousels.
-3. Generates multi-format audio narrations (WebM Opus & M4A AAC) via espeak and ffmpeg.
+Generates authentic demo assets and configurations for Tours Cathedral (Cathédrale Saint-Gatien):
+1. Writes root and localized YAML configuration files (config.yml, content/{fr,en}/config.yml).
+2. Downloads Wikimedia Commons public domain photographs.
+3. Writes comprehensive historical markdown texts with multi-image carousels.
+4. Generates multi-format audio narrations (WebM Opus & M4A AAC) via Kokoro TTS and ffmpeg.
 """
 
+import argparse
 import os
 import subprocess
 import urllib.request
@@ -13,6 +15,214 @@ import shutil
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT_DIR, 'content')
+
+ROOT_CONFIG_YAML = """monument:
+  name: "Cathédrale Saint-Gatien de Tours"
+  subtitle: "Chef-d'œuvre gothique & vitraux du XIIIe siècle"
+  cover_image: "content/fr/cathedral-cover.jpg"
+
+content_dir: "content"
+
+default_language: "fr"
+fallback_language: "en"
+
+languages:
+  - code: "fr"
+    name: "Français"
+    flag: "🇫🇷"
+  - code: "en"
+    name: "English"
+    flag: "🇬🇧"
+"""
+
+CONFIG_DATA = {
+    'fr': """monument:
+  name: "Cathédrale Saint-Gatien de Tours"
+  subtitle: "Chef-d'œuvre gothique & vitraux du XIIIe siècle"
+  badge: "Monument Historique"
+
+ui:
+  select_language: "Choisir la langue / Select language"
+  headphones_tip_title: "Visite avec oreillettes"
+  headphones_tip_text: "Fonctionne 100% hors-ligne. Branchez vos écouteurs et laissez-vous guider au fil des étapes."
+  start_tours: "Découvrir les parcours de visite"
+  tours_title: "Parcours de visite"
+  back_to_home: "Retour à l'accueil"
+  back_to_tours: "Retour aux parcours"
+  select_step: "Choisir une étape"
+  offline_badge: "💾 Hors-ligne"
+  offline_download: "Télécharger pour écoute hors-ligne"
+  downloading: "Téléchargement {percent}%..."
+  offline_ready: "✓ Disponible hors-ligne"
+  steps_count: "{count} étapes"
+  step_of: "Étape {current} sur {total}"
+  step_loading: "Chargement..."
+  step_unavailable: "Texte non disponible."
+  step_error: "Erreur lors du chargement de l'étape."
+  prev: "Préc"
+  next: "Suiv"
+  prev_step_title: "Étape précédente"
+  next_step_title: "Étape suivante"
+  skip_back_title: "Reculer de 10 secondes"
+  skip_forward_title: "Avancer de 10 secondes"
+  play_pause_title: "Lecture / Pause"
+  audio_progress: "Progression audio"
+  prev_image: "Image précédente"
+  next_image: "Image suivante"
+  carousel_slide: "Image {0}"
+
+tours:
+  - id: "essential"
+    title: "Les Grands Incontournables"
+    description: "Parcourez les chefs-d'œuvre majeurs : la façade flamboyante, la nef lumineuse, les vitraux et le tombeau royal."
+    duration: "40 min"
+    badge: "Recommandé"
+    steps:
+      - "facade"
+      - "nave"
+      - "choir-stained-glass"
+      - "royal-tomb"
+      - "rose-window"
+
+  - id: "stained-glass"
+    title: "Vitraux & Lumières du XIIIe"
+    description: "Une immersion dans l'un des ensembles de vitraux médiévaux les plus complets de France."
+    duration: "25 min"
+    badge: "Art & Vitraux"
+    steps:
+      - "choir-stained-glass"
+      - "rose-window"
+
+steps:
+  - id: "facade"
+    title: "La Façade Occidentale"
+    text_file: "facade.md"
+    audio:
+      webm: "facade.webm"
+      m4a: "facade.m4a"
+
+  - id: "nave"
+    title: "La Nef et les Grandes Voûtes"
+    text_file: "nave.md"
+    audio:
+      webm: "nave.webm"
+      m4a: "nave.m4a"
+
+  - id: "choir-stained-glass"
+    title: "Les Vitraux Radiants du Chœur"
+    text_file: "choir.md"
+    audio:
+      webm: "choir.webm"
+      m4a: "choir.m4a"
+
+  - id: "royal-tomb"
+    title: "Le Tombeau des Enfants de Charles VIII"
+    text_file: "tomb.md"
+    audio:
+      webm: "tomb.webm"
+      m4a: "tomb.m4a"
+
+  - id: "rose-window"
+    title: "La Grande Rose et le Grand Orgue"
+    text_file: "rose.md"
+    audio:
+      webm: "rose.webm"
+      m4a: "rose.m4a"
+""",
+    'en': """monument:
+  name: "Tours Cathedral (Saint-Gatien)"
+  subtitle: "Gothic Masterpiece & 13th-Century Stained Glass"
+  badge: "Historic Monument"
+
+ui:
+  select_language: "Select language / Choisir la langue"
+  headphones_tip_title: "Earphones recommended"
+  headphones_tip_text: "Operates 100% offline. Plug in your earphones and immerse yourself in the audio tour."
+  start_tours: "Explore Tour Circuits"
+  tours_title: "Tour Circuits"
+  back_to_home: "Back to home"
+  back_to_tours: "Back to tours"
+  select_step: "Select a step"
+  offline_badge: "💾 Offline"
+  offline_download: "Download for offline visit"
+  downloading: "Downloading {percent}%..."
+  offline_ready: "✓ Offline Ready"
+  steps_count: "{count} steps"
+  step_of: "Step {current} of {total}"
+  step_loading: "Loading..."
+  step_unavailable: "Text not available."
+  step_error: "Error loading step."
+  prev: "Prev"
+  next: "Next"
+  prev_step_title: "Previous step"
+  next_step_title: "Next step"
+  skip_back_title: "Rewind 10 seconds"
+  skip_forward_title: "Forward 10 seconds"
+  play_pause_title: "Play / Pause"
+  audio_progress: "Audio progress"
+  prev_image: "Previous image"
+  next_image: "Next image"
+  carousel_slide: "Slide {0}"
+
+tours:
+  - id: "essential"
+    title: "The Highlights Tour"
+    description: "Explore the cathedral's essential masterpieces: the Flamboyant facade, soaring nave, stained glass, and royal tomb."
+    duration: "40 min"
+    badge: "Recommended"
+    steps:
+      - "facade"
+      - "nave"
+      - "choir-stained-glass"
+      - "royal-tomb"
+      - "rose-window"
+
+  - id: "stained-glass"
+    title: "13th-Century Stained Glass & Light"
+    description: "An immersion into one of the most complete medieval stained glass collections in France."
+    duration: "25 min"
+    badge: "Art & Windows"
+    steps:
+      - "choir-stained-glass"
+      - "rose-window"
+
+steps:
+  - id: "facade"
+    title: "The Western Facade"
+    text_file: "facade.md"
+    audio:
+      webm: "facade.webm"
+      m4a: "facade.m4a"
+
+  - id: "nave"
+    title: "The Gothic Nave and Vaults"
+    text_file: "nave.md"
+    audio:
+      webm: "nave.webm"
+      m4a: "nave.m4a"
+
+  - id: "choir-stained-glass"
+    title: "The Radiant Choir Stained Glass"
+    text_file: "choir.md"
+    audio:
+      webm: "choir.webm"
+      m4a: "choir.m4a"
+
+  - id: "royal-tomb"
+    title: "Tomb of the Children of Charles VIII"
+    text_file: "tomb.md"
+    audio:
+      webm: "tomb.webm"
+      m4a: "tomb.m4a"
+
+  - id: "rose-window"
+    title: "The West Rose Window and Grand Organ"
+    text_file: "rose.md"
+    audio:
+      webm: "rose.webm"
+      m4a: "rose.m4a"
+"""
+}
 
 IMAGES = {
     'cathedral-cover.jpg': 'https://upload.wikimedia.org/wikipedia/commons/6/67/Tours_-_Cath%C3%A9drale_Saint-Gatien_-_Exterior_-_01.jpg',
@@ -278,10 +488,38 @@ def generate_audio_files():
             if os.path.exists(temp_wav):
                 os.remove(temp_wav)
 
+def write_config_files():
+    print("Writing demo YAML configuration files...")
+    root_config_path = os.path.join(ROOT_DIR, 'config.yml')
+    with open(root_config_path, 'w', encoding='utf-8') as f:
+        f.write(ROOT_CONFIG_YAML.strip() + '\n')
+    print(f"  -> Wrote {root_config_path}")
+
+    for lang, content in CONFIG_DATA.items():
+        lang_dir = os.path.join(CONTENT_DIR, lang)
+        os.makedirs(lang_dir, exist_ok=True)
+        config_path = os.path.join(lang_dir, 'config.yml')
+        with open(config_path, 'w', encoding='utf-8') as f:
+            f.write(content.strip() + '\n')
+        print(f"  -> Wrote {config_path}")
+
 def main():
-    download_images()
+    parser = argparse.ArgumentParser(description="Generate demo assets and configuration files.")
+    parser.add_argument('--configs-only', action='store_true', help="Only generate YAML configuration files")
+    parser.add_argument('--skip-audio', action='store_true', help="Skip heavy Kokoro neural audio synthesis")
+    parser.add_argument('--skip-images', action='store_true', help="Skip downloading Wikimedia images")
+    args = parser.parse_args()
+
+    write_config_files()
+    if args.configs_only:
+        print("✓ Demo configuration files successfully generated!")
+        return
+
+    if not args.skip_images:
+        download_images()
     write_markdown_files()
-    generate_audio_files()
+    if not args.skip_audio:
+        generate_audio_files()
     print("✓ All demo assets successfully generated!")
 
 if __name__ == '__main__':

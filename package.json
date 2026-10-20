@@ -7,7 +7,10 @@
     "serve": "node scripts/serve.js",
     "test:unit": "bash tests/run-all-tests.sh",
     "test:e2e": "playwright test",
-    "test": "npm run test:unit && npm run test:e2e"
+    "test": "npm run test:unit && npm run test:e2e",
+    "generate:demo:configs": "python3 scripts/generate_demo_assets.py --configs-only",
+    "generate:demo": "python3 scripts/generate_demo_assets.py",
+    "validate:demo": "node scripts/validate-demo-assets.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"
