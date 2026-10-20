@@ -4,6 +4,7 @@ monument:
   cover_image: "content/fr/cathedral-cover.jpg"
 
 default_language: "fr"
+fallback_language: "en"
 
 languages:
   - code: "fr"

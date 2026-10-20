@@ -46,8 +46,18 @@ function escapeHtml(str) {
  * @param {string} basePath - Directory path to prefix relative image sources
  * @returns {string} Processed HTML string
  */
-export function renderMarkdownWithCarousels(markdownText, basePath = '') {
+export function renderMarkdownWithCarousels(markdownText, basePath = '', labels = {}) {
   if (!markdownText) return '';
+
+  const prevLabel = escapeHtml(labels.prevImage || labels.prev_image || 'Previous image');
+  const nextLabel = escapeHtml(labels.nextImage || labels.next_image || 'Next image');
+  const slideFn = typeof labels.slide === 'function'
+    ? labels.slide
+    : (idx) => {
+        const tpl = labels.carouselSlide || labels.carousel_slide;
+        if (tpl) return String(tpl).replaceAll('{0}', idx).replaceAll('{index}', idx);
+        return `Slide ${idx}`;
+      };
 
   const singleImageRegex = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/;
   // Match groups of 1 or more images separated only by whitespace or newlines
@@ -77,14 +87,14 @@ export function renderMarkdownWithCarousels(markdownText, basePath = '') {
 <div class="carousel-caption">${escapeHtml(img.alt)}</div>
 </div>`).join('\n');
 
-    const dotsHtml = images.map((_, idx) => `<button class="carousel-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="Slide ${idx + 1}"></button>`).join('');
+    const dotsHtml = images.map((_, idx) => `<button class="carousel-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="${escapeHtml(slideFn(idx + 1))}"></button>`).join('');
 
     return `\n\n<div class="carousel-container" data-carousel>
 <div class="carousel-track">
 ${slidesHtml}
 </div>
-<button class="carousel-nav carousel-prev" aria-label="Previous image">❮</button>
-<button class="carousel-nav carousel-next" aria-label="Next image">❯</button>
+<button class="carousel-nav carousel-prev" aria-label="${prevLabel}">❮</button>
+<button class="carousel-nav carousel-next" aria-label="${nextLabel}">❯</button>
 <div class="carousel-dots">${dotsHtml}</div>
 </div>\n\n`;
   });

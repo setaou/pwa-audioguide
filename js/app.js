@@ -7,41 +7,6 @@ import { renderMarkdownWithCarousels, initCarousels } from './carousel.js';
 import { TourPreloader } from './preloader.js';
 import { getIcon } from './icons.js';
 
-const UI_STRINGS = {
-  fr: {
-    startTours: 'Découvrir les parcours de visite',
-    backToHome: 'Accueil',
-    backToTours: 'Parcours',
-    toursTitle: 'Parcours de visite',
-    stepsCount: (count) => `${count} étapes`,
-    stepOf: (current, total) => `Étape ${current} sur ${total}`,
-    offlineDownload: 'Télécharger pour écoute hors-ligne',
-    downloading: (pct) => `Téléchargement ${pct}%...`,
-    offlineReady: '✓ Disponible hors-ligne',
-    prev: 'Préc',
-    next: 'Suiv',
-    headphonesTipTitle: 'Visite avec oreillettes',
-    headphonesTipText: 'Fonctionne 100% hors-ligne. Branchez vos oreillettes et profitez des explications sonores.',
-    selectLanguage: 'Choisir la langue / Select language'
-  },
-  en: {
-    startTours: 'Explore Tour Circuits',
-    backToHome: 'Home',
-    backToTours: 'Tours',
-    toursTitle: 'Tour Circuits',
-    stepsCount: (count) => `${count} steps`,
-    stepOf: (current, total) => `Step ${current} of ${total}`,
-    offlineDownload: 'Download for offline visit',
-    downloading: (pct) => `Downloading ${pct}%...`,
-    offlineReady: '✓ Offline Ready',
-    prev: 'Prev',
-    next: 'Next',
-    headphonesTipTitle: 'Earphones recommended',
-    headphonesTipText: 'Operates 100% offline. Plug in your earphones and immerse yourself in the audio tour.',
-    selectLanguage: 'Select language / Choisir la langue'
-  }
-};
-
 export class AudioguideApp {
   constructor(options = {}) {
     this.storage = options.localStorage || (typeof localStorage !== 'undefined' ? localStorage : null);
@@ -49,8 +14,10 @@ export class AudioguideApp {
 
     this.currentView = 'home';
     this.currentLanguage = this.getSavedLanguage() || 'fr';
+    this.fallbackLanguage = 'en';
     this.rootConfig = null;
     this.langConfig = null;
+    this.fallbackLangConfig = null;
     this.currentTour = null;
     this.currentStepIndex = 0;
 
@@ -72,16 +39,50 @@ export class AudioguideApp {
   }
 
   t(key, ...args) {
-    const langDict = UI_STRINGS[this.currentLanguage] || UI_STRINGS.fr;
-    const val = langDict[key] || UI_STRINGS.fr[key];
-    if (typeof val === 'function') return val(...args);
-    return val || '';
+    const ui = this.langConfig?.ui || this.langConfig?.strings || {};
+    const fallbackUi = this.fallbackLangConfig?.ui || this.fallbackLangConfig?.strings || {};
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+
+    let val = ui[key] !== undefined ? ui[key] : (ui[snakeKey] !== undefined ? ui[snakeKey] : ui[camelKey]);
+
+    if (val === undefined || val === null || val === '') {
+      val = fallbackUi[key] !== undefined ? fallbackUi[key] : (fallbackUi[snakeKey] !== undefined ? fallbackUi[snakeKey] : fallbackUi[camelKey]);
+    }
+
+    if (val === undefined || val === null) {
+      return '';
+    }
+
+    if (typeof val === 'function') {
+      return val(...args);
+    }
+
+    let str = String(val);
+    if (args.length > 0) {
+      if (typeof args[0] === 'object' && args[0] !== null) {
+        Object.entries(args[0]).forEach(([k, v]) => {
+          str = str.replaceAll(`{${k}}`, v);
+        });
+      } else {
+        args.forEach((arg, idx) => {
+          str = str.replaceAll(`{${idx}}`, arg);
+        });
+        if (args.length === 1) {
+          str = str.replaceAll('{count}', args[0]).replaceAll('{percent}', args[0]).replaceAll('{pct}', args[0]);
+        } else if (args.length === 2) {
+          str = str.replaceAll('{current}', args[0]).replaceAll('{total}', args[1]);
+        }
+      }
+    }
+    return str;
   }
 
   async init() {
     await this.loadRootConfig();
     await this.loadLanguageConfig(this.currentLanguage);
     this.setupUIBindings();
+    this.applyLocalizedUI();
     this.renderHome();
     this.navigateTo('home');
   }
@@ -89,7 +90,13 @@ export class AudioguideApp {
   async loadYaml(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
-    const text = await res.text();
+    let text = await res.text();
+    if (url.endsWith('.md')) {
+      const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      if (match) {
+        text = match[1];
+      }
+    }
     const parser = this.yamlParser || globalThis.jsyaml;
     if (!parser || typeof parser.load !== 'function') {
       throw new Error('YAML parser not loaded');
@@ -108,19 +115,41 @@ export class AudioguideApp {
           subtitle: "",
           cover_image: ""
         },
+        default_language: "fr",
+        fallback_language: "en",
         languages: [
           { code: 'fr', name: 'Français', flag: '🇫🇷' },
           { code: 'en', name: 'English', flag: '🇬🇧' }
         ]
       };
     }
+    if (this.rootConfig && this.rootConfig.fallback_language) {
+      this.fallbackLanguage = this.rootConfig.fallback_language;
+    }
+  }
+
+  async loadConfigForLang(lang) {
+    if (!lang) return null;
+    try {
+      return await this.loadYaml(`content/${lang}/config.yml`);
+    } catch (err) {
+      try {
+        return await this.loadYaml(`content/${lang}/config.md`);
+      } catch (err2) {
+        console.warn(`Failed loading content/${lang}/config.yml or config.md:`, err2);
+        return null;
+      }
+    }
   }
 
   async loadLanguageConfig(lang) {
-    try {
-      this.langConfig = await this.loadYaml(`content/${lang}/config.yml`);
-    } catch (err) {
-      console.warn(`Failed loading content/${lang}/config.yml:`, err);
+    this.langConfig = await this.loadConfigForLang(lang);
+    if (this.fallbackLanguage) {
+      if (lang === this.fallbackLanguage) {
+        this.fallbackLangConfig = this.langConfig;
+      } else if (!this.fallbackLangConfig || this.fallbackLangConfig === this.langConfig) {
+        this.fallbackLangConfig = await this.loadConfigForLang(this.fallbackLanguage);
+      }
     }
   }
 
@@ -250,6 +279,102 @@ export class AudioguideApp {
     };
   }
 
+  applyLocalizedUI() {
+    if (typeof document === 'undefined') return;
+
+    // Monument info: language config takes precedence over fallback language, which takes precedence over root fallback
+    const mon = this.langConfig?.monument || {};
+    const fallbackMon = this.fallbackLangConfig?.monument || {};
+    const rootMon = this.rootConfig?.monument || {};
+
+    const titleEl = document.getElementById('monument-title');
+    const subEl = document.getElementById('monument-subtitle');
+    const badgeEl = document.getElementById('monument-badge');
+    const heroEl = document.getElementById('home-hero-bg');
+
+    const monName = mon.name || fallbackMon.name || rootMon.name || '';
+    if (titleEl && monName) titleEl.textContent = monName;
+    const monSub = (mon.subtitle !== undefined && mon.subtitle !== '')
+      ? mon.subtitle
+      : (fallbackMon.subtitle || rootMon.subtitle || '');
+    if (subEl && monSub) subEl.textContent = monSub;
+    const monBadge = mon.badge || fallbackMon.badge || rootMon.badge || '';
+    if (badgeEl && monBadge) badgeEl.textContent = monBadge;
+
+    const coverImg = this.rootConfig?.monument?.cover_image;
+    if (heroEl && coverImg) {
+      heroEl.style.backgroundImage = `url('${coverImg}')`;
+    }
+    if (monName) {
+      document.title = `Audioguide - ${monName}`;
+    }
+
+    // Home view static texts
+    const labelLang = document.getElementById('label-select-language');
+    if (labelLang) labelLang.textContent = this.t('selectLanguage');
+
+    const txtStart = document.getElementById('txt-start-tours');
+    if (txtStart) txtStart.textContent = this.t('startTours');
+
+    const tipTitle = document.getElementById('home-headphones-tip');
+    if (tipTitle) tipTitle.textContent = this.t('headphonesTipTitle');
+
+    const tipText = document.getElementById('home-offline-tip');
+    if (tipText) tipText.textContent = this.t('headphonesTipText');
+
+    // Navigation buttons aria-labels
+    const btnToursBack = document.getElementById('btn-tours-back');
+    if (btnToursBack) btnToursBack.setAttribute('aria-label', this.t('backToHome'));
+
+    const btnStepBackTours = document.getElementById('btn-step-back-tours');
+    if (btnStepBackTours) btnStepBackTours.setAttribute('aria-label', this.t('backToTours'));
+
+    const stepSelect = document.getElementById('step-selector-select');
+    if (stepSelect) stepSelect.setAttribute('aria-label', this.t('selectStep'));
+
+    // Tour header title
+    const toursTitle = document.getElementById('tours-header-title');
+    if (toursTitle) toursTitle.textContent = this.t('toursTitle');
+
+    // Player controls titles and labels
+    const seekbar = document.getElementById('player-seekbar');
+    if (seekbar) seekbar.setAttribute('aria-label', this.t('audioProgress'));
+
+    const btnPrevStep = document.getElementById('player-btn-prev-step');
+    if (btnPrevStep) {
+      btnPrevStep.setAttribute('title', this.t('prevStepTitle'));
+      btnPrevStep.setAttribute('aria-label', this.t('prevStepTitle'));
+    }
+    const txtPrev = document.getElementById('player-txt-prev');
+    if (txtPrev) txtPrev.textContent = this.t('prev');
+
+    const btnSkipBack = document.getElementById('player-btn-skip-back');
+    if (btnSkipBack) {
+      btnSkipBack.setAttribute('title', this.t('skipBackTitle'));
+      btnSkipBack.setAttribute('aria-label', this.t('skipBackTitle'));
+    }
+
+    const btnPlay = document.getElementById('player-btn-play');
+    if (btnPlay) {
+      btnPlay.setAttribute('title', this.t('playPauseTitle'));
+      btnPlay.setAttribute('aria-label', this.t('playPauseTitle'));
+    }
+
+    const btnSkipForward = document.getElementById('player-btn-skip-forward');
+    if (btnSkipForward) {
+      btnSkipForward.setAttribute('title', this.t('skipForwardTitle'));
+      btnSkipForward.setAttribute('aria-label', this.t('skipForwardTitle'));
+    }
+
+    const btnNextStep = document.getElementById('player-btn-next-step');
+    if (btnNextStep) {
+      btnNextStep.setAttribute('title', this.t('nextStepTitle'));
+      btnNextStep.setAttribute('aria-label', this.t('nextStepTitle'));
+    }
+    const txtNext = document.getElementById('player-txt-next');
+    if (txtNext) txtNext.textContent = this.t('next');
+  }
+
   navigateTo(viewName) {
     this.currentView = viewName;
     if (viewName !== 'step' && this.player) {
@@ -274,34 +399,7 @@ export class AudioguideApp {
   renderHome() {
     if (typeof document === 'undefined') return;
 
-    if (this.rootConfig && this.rootConfig.monument) {
-      const mon = this.rootConfig.monument;
-      const titleEl = document.getElementById('monument-title');
-      const subEl = document.getElementById('monument-subtitle');
-      const heroEl = document.getElementById('home-hero-bg');
-
-      if (titleEl && mon.name) titleEl.textContent = mon.name;
-      if (subEl && mon.subtitle) subEl.textContent = mon.subtitle;
-      if (heroEl && mon.cover_image) {
-        heroEl.style.backgroundImage = `url('${mon.cover_image}')`;
-      }
-      if (mon.name) {
-        document.title = `Audioguide - ${mon.name}`;
-      }
-    }
-
-    // Localized UI static text
-    const labelLang = document.getElementById('label-select-language');
-    if (labelLang) labelLang.textContent = this.t('selectLanguage');
-
-    const txtStart = document.getElementById('txt-start-tours');
-    if (txtStart) txtStart.textContent = this.t('startTours');
-
-    const tipTitle = document.getElementById('home-headphones-tip');
-    if (tipTitle) tipTitle.textContent = this.t('headphonesTipTitle');
-
-    const tipText = document.getElementById('home-offline-tip');
-    if (tipText) tipText.textContent = this.t('headphonesTipText');
+    this.applyLocalizedUI();
 
     // Language buttons
     const langGrid = document.getElementById('languages-grid');
@@ -314,6 +412,7 @@ export class AudioguideApp {
         btn.addEventListener('click', async () => {
           this.setLanguage(l.code);
           await this.loadLanguageConfig(l.code);
+          this.applyLocalizedUI();
           this.renderHome();
         });
         langGrid.appendChild(btn);
@@ -324,8 +423,7 @@ export class AudioguideApp {
   renderTours() {
     if (typeof document === 'undefined' || !this.langConfig) return;
 
-    const toursTitle = document.getElementById('tours-header-title');
-    if (toursTitle) toursTitle.textContent = this.t('toursTitle');
+    this.applyLocalizedUI();
 
     const toursContainer = document.getElementById('tours-list');
     if (!toursContainer) return;
@@ -341,7 +439,7 @@ export class AudioguideApp {
 
       card.innerHTML = `
         <div class="tour-card-header">
-          <span class="tour-card-badge">${tour.badge || 'Circuit'}</span>
+          <span class="tour-card-badge">${tour.badge || ''}</span>
           <span class="tour-card-meta">⏱ ${tour.duration || ''} • ${this.t('stepsCount', stepCount)}</span>
         </div>
         <h3 class="tour-card-title">${tour.title}</h3>
@@ -349,7 +447,7 @@ export class AudioguideApp {
 
         <div class="preload-panel" id="preload-panel-${tour.id}">
           <div class="preload-panel-header">
-            <span>💾 Hors-ligne</span>
+            <span>${this.t('offlineBadge')}</span>
             <span id="preload-status-${tour.id}">${this.t('offlineDownload')}</span>
           </div>
           <div class="preload-progress-bar" style="display: none;" id="preload-bar-${tour.id}">
@@ -468,19 +566,23 @@ export class AudioguideApp {
       // Load and render markdown content with carousels
       const markdownContainer = document.getElementById('step-body-markdown');
       if (markdownContainer) {
-        markdownContainer.innerHTML = '<p>Chargement...</p>';
+        markdownContainer.innerHTML = `<p>${this.t('stepLoading')}</p>`;
         const basePath = `content/${this.currentLanguage}/`;
         try {
           const res = await fetch(`${basePath}${step.text_file}`);
           if (res.ok) {
             const rawMd = await res.text();
-            markdownContainer.innerHTML = renderMarkdownWithCarousels(rawMd, basePath);
+            markdownContainer.innerHTML = renderMarkdownWithCarousels(rawMd, basePath, {
+              prevImage: this.t('prevImage'),
+              nextImage: this.t('nextImage'),
+              carouselSlide: this.t('carouselSlide')
+            });
             initCarousels(markdownContainer);
           } else {
-            markdownContainer.innerHTML = '<p>Texte non disponible.</p>';
+            markdownContainer.innerHTML = `<p>${this.t('stepUnavailable')}</p>`;
           }
         } catch (err) {
-          markdownContainer.innerHTML = '<p>Erreur lors du chargement de l\'étape.</p>';
+          markdownContainer.innerHTML = `<p>${this.t('stepError')}</p>`;
         }
       }
     }

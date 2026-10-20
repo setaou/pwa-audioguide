@@ -32,6 +32,7 @@ assert(rootConfig.languages.length >= 2, 'languages must have at least fr and en
 const langCodes = rootConfig.languages.map(l => l.code);
 assert(langCodes.includes('fr'), 'languages must include fr');
 assert(langCodes.includes('en'), 'languages must include en');
+assert.strictEqual(rootConfig.fallback_language, 'en', 'rootConfig must define fallback_language as en');
 
 // 2. Helper to verify Language Config
 function verifyLanguageConfig(langPath, langCode) {
@@ -40,6 +41,45 @@ function verifyLanguageConfig(langPath, langCode) {
   assert(cfg.tours.length >= 1, `${langCode} must have at least one tour`);
   assert(Array.isArray(cfg.steps), `${langCode} must have steps array`);
   assert(cfg.steps.length >= 1, `${langCode} must have at least one step`);
+
+  // Verify localized monument and UI metadata
+  assert(cfg.monument, `${langCode} must have localized monument metadata`);
+  assert(typeof cfg.monument.name === 'string' && cfg.monument.name.length > 0, `${langCode} monument.name must be non-empty`);
+  assert(typeof cfg.monument.subtitle === 'string', `${langCode} monument.subtitle must be a string`);
+  assert(typeof cfg.monument.badge === 'string', `${langCode} monument.badge must be a string`);
+
+  assert(cfg.ui && typeof cfg.ui === 'object', `${langCode} must define localized ui strings object`);
+  const requiredUiKeys = [
+    'select_language',
+    'headphones_tip_title',
+    'headphones_tip_text',
+    'start_tours',
+    'tours_title',
+    'back_to_home',
+    'back_to_tours',
+    'select_step',
+    'offline_badge',
+    'offline_download',
+    'downloading',
+    'offline_ready',
+    'steps_count',
+    'step_of',
+    'step_loading',
+    'step_unavailable',
+    'step_error',
+    'prev',
+    'next',
+    'prev_step_title',
+    'next_step_title',
+    'skip_back_title',
+    'skip_forward_title',
+    'play_pause_title',
+    'audio_progress'
+  ];
+
+  for (const k of requiredUiKeys) {
+    assert(cfg.ui[k] !== undefined, `${langCode} ui is missing key: ${k}`);
+  }
 
   const stepIds = new Set(cfg.steps.map(s => s.id));
 
