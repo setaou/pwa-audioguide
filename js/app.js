@@ -432,6 +432,7 @@ export class AudioguideApp {
       this.rootConfig.languages.forEach(l => {
         const btn = document.createElement('button');
         btn.className = `lang-btn ${l.code === this.currentLanguage ? 'active' : ''}`;
+        btn.dataset.lang = l.code;
         btn.innerHTML = `<span>${l.flag || ''}</span> <span>${l.name}</span>`;
         btn.addEventListener('click', async () => {
           this.setLanguage(l.code);
@@ -458,6 +459,7 @@ export class AudioguideApp {
     tours.forEach(tour => {
       const card = document.createElement('div');
       card.className = 'tour-card';
+      card.dataset.tourId = tour.id;
 
       const stepCount = (tour.steps || []).length;
 
@@ -486,7 +488,7 @@ export class AudioguideApp {
 
       // Open tour when card body is clicked
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.preload-panel')) return; // ignore download button click
+        if (e.target.closest('.preload-btn')) return; // ignore download button click
         this.selectTour(tour);
       });
 
