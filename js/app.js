@@ -11,7 +11,11 @@ export class AudioguideApp {
   constructor(options = {}) {
     this.storage = options.localStorage || (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function' ? localStorage : null);
     this.yamlParser = options.yamlParser || globalThis.jsyaml || null;
-    this.rootConfigPath = options.rootConfigPath || 'config.yml';
+    this.rootConfigPath = options.rootConfigPath
+      || (typeof window !== 'undefined' && typeof window.location !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('config')
+          : null)
+      || 'config.yml';
     this.contentDir = options.contentDir || null;
     this.isDevMode = options.isDevMode !== undefined
       ? Boolean(options.isDevMode)
@@ -141,6 +145,9 @@ export class AudioguideApp {
     }
     if (this.rootConfig && this.rootConfig.fallback_language) {
       this.fallbackLanguage = this.rootConfig.fallback_language;
+    }
+    if (this.preloader) {
+      this.preloader.contentDir = this.getContentDir();
     }
   }
 

@@ -139,8 +139,11 @@
     import { AudioguideApp } from './js/app.js';
     const isDev = typeof window !== 'undefined' && typeof window.location !== 'undefined'
       && new URLSearchParams(window.location.search).get('dev') === '1';
+    const configPath = typeof window !== 'undefined' && typeof window.location !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('config') || 'config.yml'
+      : 'config.yml';
 
-    window.audioguideApp = new AudioguideApp({ isDevMode: isDev });
+    window.audioguideApp = new AudioguideApp({ isDevMode: isDev, rootConfigPath: configPath });
     window.audioguideApp.init();
 
     // Service Worker management: disabled in dev mode (?dev=1), enabled otherwise
