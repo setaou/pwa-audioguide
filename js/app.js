@@ -396,8 +396,8 @@ export class AudioguideApp {
   selectTour(tour) {
     this.currentTour = tour;
     this.currentStepIndex = 0;
-    this.loadStepByIndex(0);
     this.navigateTo('step');
+    this.loadStepByIndex(0);
   }
 
   async loadStepByIndex(index) {
@@ -416,6 +416,16 @@ export class AudioguideApp {
     (this.langConfig.steps || []).forEach(s => stepMap.set(s.id, s));
     const step = stepMap.get(stepId);
     if (!step) return;
+
+    // Load Audio in Player and start playback immediately upon step arrival
+    if (this.player) {
+      if (step.audio) {
+        this.player.loadStep(step.audio, `content/${this.currentLanguage}/`);
+        this.player.play();
+      } else {
+        this.player.loadStep(null);
+      }
+    }
 
     const hasDOM = typeof document !== 'undefined';
 
@@ -472,15 +482,6 @@ export class AudioguideApp {
         } catch (err) {
           markdownContainer.innerHTML = '<p>Erreur lors du chargement de l\'étape.</p>';
         }
-      }
-    }
-
-    // Load Audio in Player
-    if (this.player) {
-      if (step.audio) {
-        this.player.loadStep(step.audio, `content/${this.currentLanguage}/`);
-      } else {
-        this.player.loadStep(null);
       }
     }
 
