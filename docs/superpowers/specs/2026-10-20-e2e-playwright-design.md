@@ -15,13 +15,14 @@ While the project already has unit/integration tests running in Node.js with moc
 
 ### Goals
 - **Real Browser Automation:** Run automated tests in a real headless browser using Playwright.
+- **Strict Isolation with Test Fixtures:** E2E tests MUST run against the lightweight test fixtures (`tests/fixtures/config.yml` and `tests/fixtures/content/{fr,en}/`), NEVER against the production/demo data (`config.yml` or `content/`).
 - **Online User Journey Validation:**
-  - Application startup and language selection (FR / EN).
-  - Tour selection and navigation to step view.
-  - Step content rendering (Markdown, image carousels, captions).
-  - Sticky audio player functionality: Play, Pause, Skip (+10s / -10s), Seekbar interaction, and step-to-step navigation.
+  - Application startup with fixture config (`?config=tests/fixtures/config.yml`) and language selection (FR / EN).
+  - Tour selection ("Circuit Test 1" / "Test Tour 1") and navigation to step view ("Étape Fictive 1").
+  - Step content rendering (Markdown, image carousels from fixtures, captions).
+  - Sticky audio player functionality: Play, Pause, Skip (+10s / -10s), Seekbar interaction, and step-to-step navigation using fixture audio files.
 - **Offline User Journey Validation:**
-  - One-click tour preloading into Cache Storage via `js/preloader.js`.
+  - One-click tour preloading into Cache Storage via `js/preloader.js` targeting test fixture assets.
   - Progress feedback during preloading and final "offline ready" indicator.
   - Full network disconnection simulation (`context.setOffline(true)`).
   - Step navigation, image viewing, and audio playback/seeking while completely offline, served by `service-worker.js`.
@@ -30,6 +31,7 @@ While the project already has unit/integration tests running in Node.js with moc
   - Standard npm commands: `npm run test:e2e` and integrated into `npm test`.
 
 ### Non-Goals
+- **Testing against Demo/Production Data in E2E:** Demo assets (`content/`) are excluded from E2E to ensure lightning-fast execution, zero flakiness, and complete isolation.
 - **Visual Regression (Pixel Diffing):** No screenshot baseline diffing; tests focus purely on functionality, DOM state, accessibility, and audio/caching behavior.
 - **Multi-Browser Grid in Default CI:** The primary target is Chromium headless (guaranteeing standard Service Worker and Opus/WebM audio support). Firefox and WebKit can be configured as optional profiles.
 - **External Cloud Services:** No SauceLabs, BrowserStack, or external testing clouds; everything runs locally or in standard CI.
@@ -61,46 +63,46 @@ Playwright requires a web server to serve the PWA over HTTP (Service Workers can
 
 #### Scenario 1: Online Journey (`online-flow.spec.js`)
 1. **Homepage & Language Switch:**
-   - Navigates to `/index.html`.
-   - Checks initial UI strings (monument title, start button).
-   - Switches language (e.g. French -> English -> French) and verifies that UI labels update accordingly.
+   - Navigates to `/index.html?config=tests/fixtures/config.yml`.
+   - Checks initial UI strings (monument title "Monument Fictif de Test", start button "Démarrer les parcours").
+   - Switches language (French -> English -> French) and verifies that UI labels update accordingly ("Mock Test Monument", "Start Tour Circuits").
 2. **Tour Selection & Step View:**
-   - Clicks "Commencer la visite" (`#btn-start-tours`).
+   - Clicks "Démarrer les parcours" (`#btn-start-tours`).
    - Verifies navigation to Tour selection view (`#view-tours`).
-   - Selects the Cathedral tour.
-   - Verifies navigation to Step view (`#view-step`), displaying Step 1 heading, text, and carousel.
+   - Selects the fixture tour "Circuit Test 1" (`tour-1`).
+   - Verifies navigation to Step view (`#view-step`), displaying Step 1 heading "Étape Fictive 1", text, and carousel.
 3. **Carousel Interaction:**
-   - Verifies image carousel is present with navigation dots.
-   - Clicks next slide indicator or swipe button and checks active slide transition.
+   - Verifies image carousel is present with navigation dots (2 images from fixtures: `img-1.jpg`, `img-2.jpg`).
+   - Clicks second dot and checks active slide transition.
 4. **Audio Playback & Seeking:**
    - Verifies sticky audio player (`#audio-player-bar`) is visible.
    - Clicks Play button (`#btn-player-play-pause`).
-   - Waits for playback to advance (`currentTime > 0`).
-   - Performs seeking (either via skip button or by setting the seekbar range).
+   - Waits for playback to advance (`currentTime > 0`) using fixture audio (`step-1.webm` / `step-1.m4a`).
+   - Performs seeking (+10s skip or seekbar).
    - Verifies that audio time updates and playback continues without error.
    - Clicks Pause button and verifies playback stops.
 5. **Step Navigation:**
    - Clicks "Étape suivante" (`#btn-player-step-next`).
-   - Verifies that Step 2 content and title are loaded.
-   - Uses the step `<select>` dropdown (`#step-selector-select`) to navigate directly to another step.
+   - Verifies that Step 2 content and title are loaded ("Étape Fictive 2").
+   - Uses the step `<select>` dropdown (`#step-selector-select`) to navigate back to Step 1.
 
 #### Scenario 2: Offline Preloading & Disconnected Tour (`offline-tour.spec.js`)
 1. **Service Worker Registration:**
-   - Loads the page and waits for `navigator.serviceWorker.ready`.
+   - Loads the page with fixture config `/index.html?config=tests/fixtures/config.yml` and waits for `navigator.serviceWorker.ready`.
 2. **Tour Preloading:**
    - Navigates to Tour selection (`#view-tours`).
-   - Locates the tour card and clicks the download button (`#btn-preload-<tour-id>`).
+   - Locates fixture tour card and clicks the download button (`#btn-preload-tour-1`).
    - Observes progress updates on the download button / progress indicator.
-   - Waits for completion (button displays "Prêt pour écoute hors-ligne" / check icon).
+   - Waits for completion (button displays "Prêt hors-ligne" / check icon).
 3. **Simulating Disconnection:**
    - Sets network offline via Playwright API: `await context.setOffline(true)`.
 4. **Offline Navigation & Media Verification:**
    - Enters the tour.
    - Navigates through Step 1 and Step 2.
-   - Verifies that step descriptions (Markdown) and carousel images render successfully without network errors.
+   - Verifies that step descriptions (Markdown) and carousel images render successfully without network errors from cache.
    - Triggers audio play on Step 1 while offline.
-   - Verifies audio plays from Cache Storage (via Service Worker range request handler).
-   - Performs an audio seek (+10s or seekbar) while offline and confirms playback continues smoothly.
+   - Verifies fixture audio plays from Cache Storage (via Service Worker range request handler).
+   - Performs an audio seek while offline and confirms playback continues smoothly.
 
 ---
 
