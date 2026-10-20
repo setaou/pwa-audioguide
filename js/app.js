@@ -11,6 +11,8 @@ export class AudioguideApp {
   constructor(options = {}) {
     this.storage = options.localStorage || (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function' ? localStorage : null);
     this.yamlParser = options.yamlParser || globalThis.jsyaml || null;
+    this.rootConfigPath = options.rootConfigPath || 'config.yml';
+    this.contentDir = options.contentDir || null;
     this.isDevMode = options.isDevMode !== undefined
       ? Boolean(options.isDevMode)
       : (typeof window !== 'undefined' && typeof window.location !== 'undefined'
@@ -20,16 +22,21 @@ export class AudioguideApp {
     this.currentView = 'home';
     this.currentLanguage = this.getSavedLanguage() || 'fr';
     this.fallbackLanguage = 'en';
-    this.rootConfig = null;
+    this.rootConfig = options.rootConfig || null;
     this.langConfig = null;
     this.fallbackLangConfig = null;
     this.currentTour = null;
     this.currentStepIndex = 0;
 
     this.player = new AudioPlayer({ isDevMode: this.isDevMode });
-    this.preloader = new TourPreloader();
+    this.preloader = options.preloader || new TourPreloader({ contentDir: this.getContentDir() });
 
     this.isScrubbing = false;
+  }
+
+  getContentDir() {
+    const dir = this.contentDir || this.rootConfig?.content_dir || 'content';
+    return String(dir).replace(/\/+$/, '');
   }
 
   getSavedLanguage() {
@@ -112,9 +119,9 @@ export class AudioguideApp {
     return parser.load(text);
   }
 
-  async loadRootConfig() {
+  async loadRootConfig(configPath = this.rootConfigPath) {
     try {
-      this.rootConfig = await this.loadYaml('config.yml');
+      this.rootConfig = await this.loadYaml(configPath);
     } catch (err) {
       console.warn('Using default root config fallback:', err);
       this.rootConfig = {
@@ -123,6 +130,7 @@ export class AudioguideApp {
           subtitle: "",
           cover_image: ""
         },
+        content_dir: "content",
         default_language: "fr",
         fallback_language: "en",
         languages: [
@@ -138,13 +146,14 @@ export class AudioguideApp {
 
   async loadConfigForLang(lang) {
     if (!lang) return null;
+    const baseDir = this.getContentDir();
     try {
-      return await this.loadYaml(`content/${lang}/config.yml`);
+      return await this.loadYaml(`${baseDir}/${lang}/config.yml`);
     } catch (err) {
       try {
-        return await this.loadYaml(`content/${lang}/config.md`);
+        return await this.loadYaml(`${baseDir}/${lang}/config.md`);
       } catch (err2) {
-        console.warn(`Failed loading content/${lang}/config.yml or config.md:`, err2);
+        console.warn(`Failed loading ${baseDir}/${lang}/config.yml or config.md:`, err2);
         return null;
       }
     }
@@ -488,7 +497,7 @@ export class AudioguideApp {
           await this.preloader.preloadTour(tour, this.currentLanguage, this.langConfig, (p) => {
             if (fill) fill.style.width = `${p.percent}%`;
             if (status) status.textContent = this.t('downloading', p.percent);
-          });
+          }, this.getContentDir());
 
           if (status) status.textContent = this.t('offlineReady');
           preloadBtn.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
@@ -523,10 +532,12 @@ export class AudioguideApp {
     const step = stepMap.get(stepId);
     if (!step) return;
 
+    const basePath = `${this.getContentDir()}/${this.currentLanguage}/`;
+
     // Load Audio in Player and start playback immediately upon step arrival
     if (this.player) {
       if (step.audio) {
-        this.player.loadStep(step.audio, `content/${this.currentLanguage}/`);
+        this.player.loadStep(step.audio, basePath);
         this.player.play();
       } else {
         this.player.loadStep(null);
@@ -575,7 +586,6 @@ export class AudioguideApp {
       const markdownContainer = document.getElementById('step-body-markdown');
       if (markdownContainer) {
         markdownContainer.innerHTML = `<p>${this.t('stepLoading')}</p>`;
-        const basePath = `content/${this.currentLanguage}/`;
         const fetchOptions = this.isDevMode ? { cache: 'no-cache' } : {};
         try {
           const res = await fetch(`${basePath}${step.text_file}`, fetchOptions);

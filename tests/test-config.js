@@ -5,14 +5,16 @@ import path from 'node:path';
 // Minimal YAML parser check or using js-yaml vendor bundle
 const rootDir = process.cwd();
 const rootConfigPath = path.join(rootDir, 'config.yml');
-const frConfigPath = path.join(rootDir, 'content/fr/config.yml');
-const enConfigPath = path.join(rootDir, 'content/en/config.yml');
+const fixturesConfigPath = path.join(rootDir, 'tests/fixtures/config.yml');
+const frConfigPath = path.join(rootDir, 'tests/fixtures/content/fr/config.yml');
+const enConfigPath = path.join(rootDir, 'tests/fixtures/content/en/config.yml');
 const jsYamlPath = path.join(rootDir, 'js/vendor/js-yaml.min.js');
 
 assert(fs.existsSync(jsYamlPath), 'js/vendor/js-yaml.min.js must exist');
 assert(fs.existsSync(rootConfigPath), 'config.yml must exist');
-assert(fs.existsSync(frConfigPath), 'content/fr/config.yml must exist');
-assert(fs.existsSync(enConfigPath), 'content/en/config.yml must exist');
+assert(fs.existsSync(fixturesConfigPath), 'tests/fixtures/config.yml must exist');
+assert(fs.existsSync(frConfigPath), 'tests/fixtures/content/fr/config.yml must exist');
+assert(fs.existsSync(enConfigPath), 'tests/fixtures/content/en/config.yml must exist');
 
 // Load js-yaml using vm or Function to verify it works in browser/node
 const jsYamlCode = fs.readFileSync(jsYamlPath, 'utf8');
@@ -33,6 +35,13 @@ const langCodes = rootConfig.languages.map(l => l.code);
 assert(langCodes.includes('fr'), 'languages must include fr');
 assert(langCodes.includes('en'), 'languages must include en');
 assert.strictEqual(rootConfig.fallback_language, 'en', 'rootConfig must define fallback_language as en');
+if (rootConfig.content_dir !== undefined) {
+  assert(typeof rootConfig.content_dir === 'string' && rootConfig.content_dir.length > 0, 'content_dir must be a non-empty string when provided');
+}
+
+// 1b. Verify Fixtures Root Config (with explicit content_dir)
+const fixturesConfig = jsyaml.load(fs.readFileSync(fixturesConfigPath, 'utf8'));
+assert.strictEqual(fixturesConfig.content_dir, 'tests/fixtures/content', 'fixturesConfig must specify content_dir');
 
 // 2. Helper to verify Language Config
 function verifyLanguageConfig(langPath, langCode) {

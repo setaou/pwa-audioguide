@@ -78,15 +78,17 @@ audioguide/
 │       ├── facade.m4a
 │       └── ...
 ├── scripts/
-│   └── generate_demo_assets.py # Script de génération des médias démo (TTS + photos)
+│   ├── generate_demo_assets.py # Script de génération des médias démo (TTS + photos)
+│   └── validate-demo-assets.py # Vérification des fichiers et médias réels de démonstration
 └── tests/
-    ├── run-all-tests.sh        # Lanceur global de tests
+    ├── fixtures/               # Contenu et configurations fictifs pour les tests
+    ├── run-all-tests.sh        # Lanceur global de tests (isolé du contenu de démo)
     ├── test-config.js          # Validation des schémas YAML
     ├── test-carousel.js        # Test du carrousel d'images consécutives
     ├── test-player.js          # Test de la machine d'état audio
     ├── test-service-worker.js  # Test des requêtes Range 206 et du préchargeur
-    ├── test-app-flow.js        # Test de navigation entre écrans
-    └── test-demo-assets.js     # Vérification des fichiers et médias réels
+    ├── test-app-flow.js        # Test de navigation entre écrans et content_dir
+    └── test-mock-assets.js     # Vérification des fichiers et médias fictifs
 ```
 
 ---
@@ -124,18 +126,26 @@ Ce mode active automatiquement des comportements adaptés au développement loca
 
 ## 🧪 Tests Automatisés
 
-L'ensemble des fonctionnalités est couvert par des tests unitaires et d'intégration :
+L'ensemble des fonctionnalités de l'audioguide est couvert par des tests unitaires et d'intégration autonomes, isolés du contenu de démo via des fixtures dédiées (`tests/fixtures/`) :
 
 ```bash
 bash tests/run-all-tests.sh
 ```
 
+Le chemin vers le dossier contenant les données de visite peut être personnalisé dans `config.yml` via la directive optionnelle `content_dir` (par défaut `content`).
+
 ---
 
-## 🎙️ Régénération des Médias Démo
+## 🎙️ Médias de Démonstration
 
 Pour régénérer les textes, photos Wikimedia et pistes audio synthétisées (TTS espeak + encodage ffmpeg) :
 
 ```bash
 python3 scripts/generate_demo_assets.py
+```
+
+Pour valider l'intégrité des médias de démonstration (Tours) :
+
+```bash
+node scripts/validate-demo-assets.js
 ```

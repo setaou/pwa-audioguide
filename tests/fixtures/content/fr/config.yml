@@ -1,0 +1,55 @@
+monument:
+  name: "Monument Fictif de Test"
+  subtitle: "Guide interactif de test pour tests automatisés"
+  badge: "Monument Test"
+
+ui:
+  select_language: "Choisir la langue"
+  headphones_tip_title: "Conseil écouteurs"
+  headphones_tip_text: "Pour une meilleure immersion, utilisez des écouteurs."
+  start_tours: "Démarrer les parcours"
+  tours_title: "Parcours de visite"
+  back_to_home: "Accueil"
+  back_to_tours: "Parcours"
+  select_step: "Choisir une étape"
+  offline_badge: "Hors-ligne disponible"
+  offline_download: "Télécharger"
+  downloading: "Téléchargement {percent}%..."
+  offline_ready: "Prêt hors-ligne"
+  steps_count: "{count} étapes"
+  step_of: "Étape {current} sur {total}"
+  step_loading: "Chargement de l'étape..."
+  step_unavailable: "Étape indisponible"
+  step_error: "Erreur de chargement"
+  prev: "Précédent"
+  next: "Suivant"
+  prev_step_title: "Étape précédente"
+  next_step_title: "Étape suivante"
+  skip_back_title: "Reculer de 10s"
+  skip_forward_title: "Avancer de 30s"
+  play_pause_title: "Lecture / Pause"
+  audio_progress: "Progression audio"
+  prev_image: "Photo précédente"
+  next_image: "Photo suivante"
+  carousel_slide: "Photo {current} sur {total}"
+
+steps:
+  - id: "step-1"
+    title: "Étape Fictive 1"
+    text_file: "step-1.md"
+    audio:
+      webm: "step-1.webm"
+      m4a: "step-1.m4a"
+  - id: "step-2"
+    title: "Étape Fictive 2"
+    text_file: "step-2.md"
+    audio:
+      webm: "step-2.webm"
+      m4a: "step-2.m4a"
+
+tours:
+  - id: "tour-1"
+    title: "Circuit Test 1"
+    steps:
+      - "step-1"
+      - "step-2"

@@ -93,15 +93,15 @@ mockAudio.emit('loadedmetadata');
 assert.strictEqual(metadataUpdated, true, 'loadedmetadata must trigger onTimeUpdate with duration');
 
 player.loadStep({
-  webm: 'facade.webm',
-  m4a: 'facade.m4a'
-}, 'content/fr/');
+  webm: 'step-1.webm',
+  m4a: 'step-1.m4a'
+}, 'tests/fixtures/content/fr/');
 
 const sources = player.getSources();
 assert.strictEqual(sources.length, 2, 'Must have 2 audio sources');
-assert.strictEqual(sources[0].src, 'content/fr/facade.webm');
+assert.strictEqual(sources[0].src, 'tests/fixtures/content/fr/step-1.webm');
 assert.strictEqual(sources[0].type, 'audio/webm; codecs=opus');
-assert.strictEqual(sources[1].src, 'content/fr/facade.m4a');
+assert.strictEqual(sources[1].src, 'tests/fixtures/content/fr/step-1.m4a');
 assert.strictEqual(sources[1].type, 'audio/mp4');
 
 // 2. Test play / pause state
@@ -120,9 +120,9 @@ assert.strictEqual(player.isPlaying(), true);
 stateEvents = [];
 
 player.loadStep({
-  webm: 'choir.webm',
-  m4a: 'choir.m4a'
-}, 'content/fr/');
+  webm: 'step-2.webm',
+  m4a: 'step-2.m4a'
+}, 'tests/fixtures/content/fr/');
 
 assert.strictEqual(player.isPlaying(), false, 'Player must be stopped after loadStep');
 assert(stateEvents.length > 0 && stateEvents[stateEvents.length - 1] === false, 'loadStep must emit onStateChange(false)');
@@ -180,14 +180,14 @@ assert.strictEqual(autoAdvanced, false, 'Audio player must NOT auto-advance when
     assert.strictEqual(devPlayer.isDevMode, true, 'devPlayer must have isDevMode true');
 
     devPlayer.loadStep({
-      webm: 'facade.webm',
-      m4a: 'facade.m4a'
-    }, 'content/fr/');
+      webm: 'step-1.webm',
+      m4a: 'step-1.m4a'
+    }, 'tests/fixtures/content/fr/');
 
     await devPlayer.play();
 
     assert.strictEqual(fetchedUrls.length, 1, 'Should fetch audio file in dev mode');
-    assert.strictEqual(fetchedUrls[0].url, 'content/fr/facade.webm');
+    assert.strictEqual(fetchedUrls[0].url, 'tests/fixtures/content/fr/step-1.webm');
     assert.deepStrictEqual(fetchedUrls[0].opts, { cache: 'no-cache' });
     assert(mockDevAudio.src && mockDevAudio.src.startsWith('blob:'), 'mockDevAudio.src must be set to a blob: URL');
 
@@ -195,9 +195,9 @@ assert.strictEqual(autoAdvanced, false, 'Audio player must NOT auto-advance when
 
     // Load next step: previous blob URL must be revoked
     devPlayer.loadStep({
-      webm: 'choir.webm',
-      m4a: 'choir.m4a'
-    }, 'content/fr/');
+      webm: 'step-2.webm',
+      m4a: 'step-2.m4a'
+    }, 'tests/fixtures/content/fr/');
     await devPlayer.play();
 
     assert(revokedUrls.includes(firstBlobUrl), 'Previous Blob URL must be revoked on step change');

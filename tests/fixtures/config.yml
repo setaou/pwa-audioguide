@@ -1,0 +1,17 @@
+monument:
+  name: "Monument Fictif de Test"
+  subtitle: "Guide interactif de test pour tests automatisés"
+  cover_image: "tests/fixtures/content/fr/cover.jpg"
+
+content_dir: "tests/fixtures/content"
+
+default_language: "fr"
+fallback_language: "en"
+
+languages:
+  - code: "fr"
+    name: "Français"
+    flag: "🇫🇷"
+  - code: "en"
+    name: "English"
+    flag: "🇬🇧"

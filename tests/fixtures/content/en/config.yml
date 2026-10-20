@@ -1,0 +1,55 @@
+monument:
+  name: "Mock Test Monument"
+  subtitle: "Interactive test guide for automated testing"
+  badge: "Test Monument"
+
+ui:
+  select_language: "Select Language"
+  headphones_tip_title: "Headphones Recommendation"
+  headphones_tip_text: "For the best experience, please use headphones."
+  start_tours: "Start Tour Circuits"
+  tours_title: "Tour Circuits"
+  back_to_home: "Home"
+  back_to_tours: "Tours"
+  select_step: "Select a step"
+  offline_badge: "Offline Available"
+  offline_download: "Download"
+  downloading: "Downloading {percent}%..."
+  offline_ready: "Offline Ready"
+  steps_count: "{count} steps"
+  step_of: "Step {current} of {total}"
+  step_loading: "Loading step..."
+  step_unavailable: "Step unavailable"
+  step_error: "Loading error"
+  prev: "Previous"
+  next: "Next"
+  prev_step_title: "Previous step"
+  next_step_title: "Next step"
+  skip_back_title: "Skip back 10s"
+  skip_forward_title: "Skip forward 30s"
+  play_pause_title: "Play / Pause"
+  audio_progress: "Audio progress"
+  prev_image: "Previous photo"
+  next_image: "Next photo"
+  carousel_slide: "Photo {current} of {total}"
+
+steps:
+  - id: "step-1"
+    title: "Mock Step 1"
+    text_file: "step-1.md"
+    audio:
+      webm: "step-1.webm"
+      m4a: "step-1.m4a"
+  - id: "step-2"
+    title: "Mock Step 2"
+    text_file: "step-2.md"
+    audio:
+      webm: "step-2.webm"
+      m4a: "step-2.m4a"
+
+tours:
+  - id: "tour-1"
+    title: "Test Tour 1"
+    steps:
+      - "step-1"
+      - "step-2"

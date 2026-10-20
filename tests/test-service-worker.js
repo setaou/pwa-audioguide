@@ -59,4 +59,46 @@ const m4aAudio = selectOptimalAudio(audioConfig, (type) => {
 });
 assert.strictEqual(m4aAudio, 'step.m4a', 'Should choose m4a fallback when webm is not supported');
 
+// 4. Test TourPreloader with configurable contentDir
+const preloader = new TourPreloader({ contentDir: 'tests/fixtures/content' });
+assert.strictEqual(preloader.contentDir, 'tests/fixtures/content', 'Preloader must store configured contentDir');
+
+const testTour = { id: 'tour-1', steps: ['step-1'] };
+const testLangConfig = {
+  steps: [
+    {
+      id: 'step-1',
+      text_file: 'step-1.md',
+      audio: { webm: 'step-1.webm', m4a: 'step-1.m4a' }
+    }
+  ]
+};
+
+const preloadedFiles = [];
+const fetchedFiles = [];
+const origFetch = globalThis.fetch;
+globalThis.fetch = async (url) => {
+  fetchedFiles.push(url);
+  if (url.endsWith('.md')) {
+    return {
+      ok: true,
+      text: async () => '![Test](img-1.jpg)'
+    };
+  }
+  return { ok: true, text: async () => '' };
+};
+
+try {
+  await preloader.preloadTour(testTour, 'fr', testLangConfig, (p) => {
+    preloadedFiles.push(p.file);
+  });
+  assert(fetchedFiles.includes('tests/fixtures/content/fr/step-1.md'), 'Must fetch markdown with custom content dir');
+  assert(preloadedFiles.includes('tests/fixtures/content/fr/config.yml'), 'Must preload custom content dir config.yml');
+  assert(preloadedFiles.includes('tests/fixtures/content/fr/step-1.md'), 'Must preload custom content dir markdown');
+  assert(preloadedFiles.includes('tests/fixtures/content/fr/step-1.webm'), 'Must preload custom content dir audio');
+  assert(preloadedFiles.includes('tests/fixtures/content/fr/img-1.jpg'), 'Must preload custom content dir image');
+} finally {
+  globalThis.fetch = origFetch;
+}
+
 console.log('✓ test-service-worker passed successfully!');

@@ -32,6 +32,7 @@ export function selectOptimalAudio(audioConfig, canPlayTypeFn) {
 export class TourPreloader {
   constructor(options = {}) {
     this.cacheName = options.cacheName || CACHE_NAME;
+    this.contentDir = options.contentDir || 'content';
     this.canPlayType = options.canPlayType || ((type) => {
       if (typeof Audio !== 'undefined') {
         const a = new Audio();
@@ -48,12 +49,14 @@ export class TourPreloader {
    * @param {string} lang - Language code (e.g. 'fr')
    * @param {Object} langConfig - Complete language config containing steps
    * @param {(progress: { current: number, total: number, percent: number, file: string }) => void} onProgress
+   * @param {string} [contentDir] - Base directory for content (defaults to this.contentDir or 'content')
    * @returns {Promise<void>}
    */
-  async preloadTour(tour, lang, langConfig, onProgress = null) {
+  async preloadTour(tour, lang, langConfig, onProgress = null, contentDir = this.contentDir) {
     if (!tour || !langConfig) return;
 
-    const basePath = `content/${lang}/`;
+    const baseDir = (contentDir || this.contentDir || 'content').replace(/\/+$/, '');
+    const basePath = `${baseDir}/${lang}/`;
     const stepMap = new Map();
     (langConfig.steps || []).forEach(s => stepMap.set(s.id, s));
 

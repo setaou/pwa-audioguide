@@ -3,6 +3,8 @@ monument:
   subtitle: "Chef-d'œuvre gothique & vitraux du XIIIe siècle"
   cover_image: "content/fr/cathedral-cover.jpg"
 
+content_dir: "content"
+
 default_language: "fr"
 fallback_language: "en"
 

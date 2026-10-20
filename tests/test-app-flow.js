@@ -127,14 +127,23 @@ assert.strictEqual(app.t('steps_count', 5), '5 étapes', 'Should interpolate sin
 assert.strictEqual(app.t('step_of', 2, 8), 'Étape 2 sur 8', 'Should interpolate multiple arguments');
 assert.strictEqual(app.t('downloading', 42), 'Téléchargement 42%...');
 
-// 8. Test loading real content/fr/config.yml and content/en/config.yml
+// 8. Test getContentDir() and loading test fixtures from tests/fixtures/config.yml
+assert(typeof app.getContentDir === 'function', 'app.getContentDir must be a function');
+assert.strictEqual(app.getContentDir(), 'content', 'Default contentDir must be content');
+
+const customApp = new AudioguideApp({
+  rootConfig: { content_dir: 'custom/path/' }
+});
+assert.strictEqual(customApp.getContentDir(), 'custom/path', 'Trailing slashes should be trimmed from content_dir');
+
 const jsYamlPath = path.join(rootDir, 'js/vendor/js-yaml.min.js');
 const jsYamlCode = fs.readFileSync(jsYamlPath, 'utf8');
 const vmCtx = {};
 new Function('window', 'self', 'globalThis', jsYamlCode)(vmCtx, vmCtx, vmCtx);
 const testParser = vmCtx.jsyaml;
 
-const realApp = new AudioguideApp({
+const fixtureApp = new AudioguideApp({
+  rootConfigPath: 'tests/fixtures/config.yml',
   yamlParser: testParser,
   localStorage: fakeLocalStorage
 });
@@ -158,32 +167,35 @@ globalThis.fetch = async (url) => {
   };
 };
 
-await realApp.loadRootConfig();
-assert(realApp.rootConfig, 'realApp should load rootConfig');
+await fixtureApp.loadRootConfig();
+assert(fixtureApp.rootConfig, 'fixtureApp should load rootConfig');
+assert.strictEqual(fixtureApp.getContentDir(), 'tests/fixtures/content', 'fixtureApp contentDir should come from fixtures config.yml');
 
-await realApp.loadLanguageConfig('fr');
-assert.strictEqual(realApp.t('start_tours'), 'Découvrir les parcours de visite');
-assert.strictEqual(realApp.t('tours_title'), 'Parcours de visite');
-assert.strictEqual(realApp.langConfig.monument.badge, 'Monument Historique');
-assert.strictEqual(realApp.langConfig.monument.name, 'Cathédrale Saint-Gatien de Tours');
+await fixtureApp.loadLanguageConfig('fr');
+assert.strictEqual(fixtureApp.t('start_tours'), 'Démarrer les parcours');
+assert.strictEqual(fixtureApp.t('tours_title'), 'Parcours de visite');
+assert.strictEqual(fixtureApp.langConfig.monument.badge, 'Monument Test');
+assert.strictEqual(fixtureApp.langConfig.monument.name, 'Monument Fictif de Test');
 
-await realApp.loadLanguageConfig('en');
-assert.strictEqual(realApp.t('start_tours'), 'Explore Tour Circuits');
-assert.strictEqual(realApp.t('tours_title'), 'Tour Circuits');
-assert.strictEqual(realApp.langConfig.monument.badge, 'Historic Monument');
-assert.strictEqual(realApp.langConfig.monument.name, 'Tours Cathedral (Saint-Gatien)');
+await fixtureApp.loadLanguageConfig('en');
+assert.strictEqual(fixtureApp.t('start_tours'), 'Start Tour Circuits');
+assert.strictEqual(fixtureApp.t('tours_title'), 'Tour Circuits');
+assert.strictEqual(fixtureApp.langConfig.monument.badge, 'Test Monument');
+assert.strictEqual(fixtureApp.langConfig.monument.name, 'Mock Test Monument');
 
-// 9. Test config.md fallback loading
+// 9. Test config.md fallback loading using configured contentDir
 const testMdApp = new AudioguideApp({
+  contentDir: 'tests/fixtures/content',
   yamlParser: testParser,
   localStorage: fakeLocalStorage
 });
+const baseDir = testMdApp.getContentDir();
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (url) => {
-  if (url === 'content/testlang/config.yml') {
+  if (url === `${baseDir}/testlang/config.yml`) {
     return { ok: false, status: 404, text: async () => '' };
   }
-  if (url === 'content/testlang/config.md') {
+  if (url === `${baseDir}/testlang/config.md`) {
     return {
       ok: true,
       status: 200,

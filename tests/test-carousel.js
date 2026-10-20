@@ -16,43 +16,43 @@ assert(typeof initCarousels === 'function', 'initCarousels must be a function');
 
 // Test Case 1: Consecutive images get converted into carousel
 const markdownWithCarousel = `
-# La Façade
+# Étape de test
 
-Admirez la façade gothique flamboyante :
+Description avec plusieurs images :
 
-![Portail central de la cathédrale](facade-1.jpg)
-![Détail des voussures et sculptures](facade-2.jpg)
-![Les deux tours couronnées de dômes](facade-3.jpg)
+![Image test 1](img-1.jpg)
+![Image test 2](img-2.jpg)
+![Image test 3](img-3.jpg)
 
-La construction s'est étalée sur plusieurs siècles.
+Suite de la description.
 `;
 
-const htmlWithCarousel = renderMarkdownWithCarousels(markdownWithCarousel, 'content/fr/');
+const htmlWithCarousel = renderMarkdownWithCarousels(markdownWithCarousel, 'tests/fixtures/content/fr/');
 assert(htmlWithCarousel.includes('carousel-container'), 'HTML must contain carousel-container');
 assert(htmlWithCarousel.includes('carousel-slide'), 'HTML must contain carousel-slide');
-assert(htmlWithCarousel.includes('src="content/fr/facade-1.jpg"'), 'Images must resolve relative to basePath');
-assert(htmlWithCarousel.includes('src="content/fr/facade-2.jpg"'), 'Images must resolve relative to basePath');
-assert(htmlWithCarousel.includes('src="content/fr/facade-3.jpg"'), 'Images must resolve relative to basePath');
-assert(htmlWithCarousel.includes('Portail central de la cathédrale'), 'Caption 1 must be present');
-assert(htmlWithCarousel.includes('Détail des voussures et sculptures'), 'Caption 2 must be present');
+assert(htmlWithCarousel.includes('src="tests/fixtures/content/fr/img-1.jpg"'), 'Images must resolve relative to basePath');
+assert(htmlWithCarousel.includes('src="tests/fixtures/content/fr/img-2.jpg"'), 'Images must resolve relative to basePath');
+assert(htmlWithCarousel.includes('src="tests/fixtures/content/fr/img-3.jpg"'), 'Images must resolve relative to basePath');
+assert(htmlWithCarousel.includes('Image test 1'), 'Caption 1 must be present');
+assert(htmlWithCarousel.includes('Image test 2'), 'Caption 2 must be present');
 assert(htmlWithCarousel.includes('carousel-dots'), 'Must have carousel-dots indicator');
 assert(htmlWithCarousel.includes('carousel-prev') && htmlWithCarousel.includes('carousel-next'), 'Must have navigation buttons');
 
 // Test Case 2: Isolated single image does NOT become a carousel
 const markdownWithSingleImage = `
-# L'Orgue
+# Étape solo
 
-Voici le buffet d'orgue :
+Voici une image seule :
 
-![Grand orgue de la Renaissance](organ.jpg)
+![Photo unique](solo.jpg)
 
-C'est un chef-d'œuvre du XVIe siècle.
+Ceci est une description.
 `;
 
-const htmlWithSingle = renderMarkdownWithCarousels(markdownWithSingleImage, 'content/fr/');
+const htmlWithSingle = renderMarkdownWithCarousels(markdownWithSingleImage, 'tests/fixtures/content/fr/');
 assert(!htmlWithSingle.includes('carousel-container'), 'Single image must NOT be wrapped in carousel-container');
-assert(htmlWithSingle.includes('src="content/fr/organ.jpg"'), 'Single image must resolve with basePath');
-assert(htmlWithSingle.includes('Grand orgue de la Renaissance'), 'Single image caption must be present');
+assert(htmlWithSingle.includes('src="tests/fixtures/content/fr/solo.jpg"'), 'Single image must resolve with basePath');
+assert(htmlWithSingle.includes('Photo unique'), 'Single image caption must be present');
 
 // Test Case 3: initCarousels calculates dynamic track height based on real image aspect ratios
 // Mock window.innerHeight = 800px (40vh = 320px)

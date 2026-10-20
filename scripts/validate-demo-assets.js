@@ -46,4 +46,4 @@ for (const lang of languages) {
   }
 }
 
-console.log('✓ test-demo-assets passed successfully!');
+console.log('✓ Demo assets validated successfully!');
