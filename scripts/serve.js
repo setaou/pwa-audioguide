@@ -67,8 +67,9 @@ export function createStaticServer(rootDir = process.cwd()) {
     let pathname = decodeURIComponent(parsedUrl.pathname);
 
     // Prevent path traversal
-    let safePath = path.normalize(path.join(rootDir, pathname));
-    if (!safePath.startsWith(rootDir)) {
+    const resolvedRoot = path.resolve(rootDir);
+    let safePath = path.resolve(path.join(resolvedRoot, pathname));
+    if (!safePath.startsWith(resolvedRoot + path.sep) && safePath !== resolvedRoot) {
       res.writeHead(403, { 'Content-Type': 'text/plain' });
       return res.end('Forbidden');
     }
