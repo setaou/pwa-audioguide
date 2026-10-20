@@ -2,3 +2,7 @@
 .SPECS.swp
 .venv/
 .cache/
+node_modules/
+test-results/
+playwright-report/
+
