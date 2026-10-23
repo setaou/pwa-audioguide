@@ -43,8 +43,8 @@ steps:
     transitions:
       "step-2":
         audio:
-          webm: "step-2.webm"
-          m4a: "step-2.m4a"
+          webm: "step-1-trans.webm"
+          m4a: "step-1-trans.m4a"
   - id: "step-2"
     title: "Mock Step 2"
     text_file: "step-2.md"
