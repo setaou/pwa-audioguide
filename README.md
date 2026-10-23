@@ -19,6 +19,10 @@ Démonstration préconfigurée : **Cathédrale Saint-Gatien de Tours** (Val de L
   - Gros bouton tactile Play / Pause avec synchronisation immédiate de l'état.
   - Boutons Étape Précédente / Étape Suivante.
   - Arrêt automatique de la lecture à la fin de la piste (pas de saut automatique non souhaité).
+- **Transitions audio d'inter-étapes & guidage interactif :**
+  - Prise en charge optionnelle de pistes audio de transition (`transitions`) pour accompagner le visiteur pendant son trajet à pied vers l'étape suivante.
+  - **Timeline virtuelle unifiée :** Le lecteur agrège la durée de l'étape et de la transition (`durée totale = étape + transition`) avec bascule automatique et seeking continu sur l'ensemble de la timeline virtuelle.
+  - **Animation incitative (pulsation du bouton Suivant) :** Le bouton tactile « Étape suivante » s'anime d'une pulsation lumineuse douce dès la fin du commentaire principal ou pendant la lecture de la transition pour guider le visiteur vers le point d'intérêt suivant.
 - **Multi-format Audio universel :**
   - **Source principale :** Opus dans un conteneur WebM (`.webm`, `audio/webm; codecs=opus`).
   - **Source de repli (fallback) :** AAC dans un conteneur M4A (`.m4a`, `audio/mp4`) pour compatibilité iOS Safari.
@@ -30,6 +34,7 @@ Démonstration préconfigurée : **Cathédrale Saint-Gatien de Tours** (Val de L
 - **100% Hors-ligne (PWA) :**
   - Service Worker avec stratégie Cache-First pour l'ensemble des ressources applicatives et médias.
   - Synthèse des réponses HTTP `206 Partial Content` (Range requests) pour permettre le déplacement temporel (seek) dans les fichiers audio en mode hors-ligne sans connexion.
+  - Préchargement complet en un clic incluant textes, images, audios principaux et pistes audio de transition (dans le format optimisé pour l'appareil).
 - **Architecture 100% Agnostique & Internationalisée :**
   - Aucune référence codée en dur au monument dans le code applicatif.
   - Textes d'interface utilisateur (`ui:`) et métadonnées du monument externalisés dans les fichiers de configuration YAML par langue avec gestion d'une langue de repli (`fallback_language`).
@@ -129,6 +134,48 @@ npx serve -l 8080 .
 
 ---
 
+## 📝 Configuration des Parcours & Transitions
+
+Les parcours et étapes sont définis au format YAML dans `content/<langue>/config.yml` (ou dans `tests/fixtures/content/<langue>/config.yml` pour les tests).
+
+Chaque étape (`steps`) peut optionnellement déclarer une ou plusieurs transitions audio (`transitions`) vers les étapes suivantes d'un parcours :
+
+```yaml
+steps:
+  - id: "facade"
+    title: "La Façade Occidentale"
+    text_file: "facade.md"
+    audio:
+      webm: "facade.webm"
+      m4a: "facade.m4a"
+    # Transition optionnelle vers l'étape suivante (ex: guidage à pied vers la nef)
+    transitions:
+      "nave":
+        audio:
+          webm: "vers-nef.webm"
+          m4a: "vers-nef.m4a"
+
+  - id: "nave"
+    title: "La Nef Lumineuse"
+    text_file: "nave.md"
+    audio:
+      webm: "nave.webm"
+      m4a: "nave.m4a"
+
+tours:
+  - id: "essential"
+    title: "Les Grands Incontournables"
+    description: "Parcours des chefs-d'œuvre majeurs."
+    duration: "40 min"
+    steps:
+      - "facade"
+      - "nave"
+```
+
+Lorsqu'un visiteur écoute l'étape `facade`, le lecteur prépare automatiquement la transition vers `nave`. À la fin du commentaire principal de la façade, la transition démarre sans coupure, la timeline virtuelle avance de manière transparente et le bouton de passage à l'étape suivante pulse doucement pour inviter le visiteur à cheminer.
+
+---
+
 ## 🎛️ Paramètres d'URL Utiles
 
 L'application accepte des paramètres de requête dans l'URL pour simplifier le développement et les tests automatisés :
@@ -171,11 +218,11 @@ npm run test:unit
 # ou : bash tests/run-all-tests.sh
 ```
 Valide en 6 étapes :
-1. Les schémas de configuration YAML et la conformité des données.
+1. Les schémas de configuration YAML, la conformité des données et le schéma des transitions.
 2. Le moteur de parsing Markdown et le regroupement d'images en carrousel tactile.
-3. La machine d'état du lecteur audio bi-source (Opus/AAC) et le calcul de timeline.
-4. Le Service Worker, la synthèse des réponses `206 Partial Content` et le préchargeur.
-5. Le routeur applicatif, la navigation inter-écrans et la prise en charge de `content_dir`.
+3. La machine d'état du lecteur audio bi-source (Opus/AAC), timeline virtuelle unifiée et enchaînement fluide des transitions.
+4. Le Service Worker, la synthèse des réponses `206 Partial Content` et la mise en cache hors-ligne des parcours et transitions.
+5. Le routeur applicatif, la navigation inter-écrans, la prise en charge de `content_dir` et le cycle d'animation (pulsation) du bouton Suivant.
 6. L'intégrité des médias et fixtures de test.
 
 ### Tests End-to-End (E2E Playwright)
@@ -184,8 +231,8 @@ npm run test:e2e
 # ou : npx playwright test
 ```
 Exécute les tests dans un navigateur Chromium réel :
-- **`tests/e2e/online-flow.spec.js` :** Vérifie le changement de langue, la persistance dans `localStorage`, la sélection d'un circuit, la navigation entre étapes, l'interaction avec le carrousel, la lecture audio, le saut temporel (+10s) et la pause.
-- **`tests/e2e/offline-tour.spec.js` :** Enregistre le Service Worker, télécharge le parcours hors-ligne dans le `CacheStorage`, **coupe complètement la connexion réseau** (`setOffline(true)`), puis valide la navigation, l'affichage des textes/images et la lecture/seeking audio 100% hors-ligne.
+- **`tests/e2e/online-flow.spec.js` :** Vérifie le changement de langue, la persistance dans `localStorage`, la sélection d'un circuit, la navigation entre étapes, l'interaction avec le carrousel, la lecture audio, l'enchaînement des transitions audio avec timeline virtuelle et pulsation du bouton Suivant, le saut temporel (+10s) et la pause.
+- **`tests/e2e/offline-tour.spec.js` :** Enregistre le Service Worker, télécharge le parcours hors-ligne dans le `CacheStorage` (incluant les transitions audio), **coupe complètement la connexion réseau** (`setOffline(true)`), puis valide la navigation, l'affichage des textes/images et la lecture/seeking audio 100% hors-ligne.
 
 ---
 
