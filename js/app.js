@@ -262,7 +262,7 @@ export class AudioguideApp {
     if (seekbar) {
       seekbar.addEventListener('input', (e) => {
         this.isScrubbing = true;
-        const duration = this.player.audio ? this.player.audio.duration : 0;
+        const duration = this.player?.getDuration ? this.player.getDuration() : (this.player?.audio ? this.player.audio.duration : 0);
         const targetSecs = (parseFloat(e.target.value) / 100) * duration;
         const curTimeEl = document.getElementById('player-time-current');
         if (curTimeEl) curTimeEl.textContent = formatTime(targetSecs);
@@ -270,7 +270,7 @@ export class AudioguideApp {
 
       const finishScrubbing = (e) => {
         if (!this.isScrubbing) return;
-        const duration = this.player.audio ? this.player.audio.duration : 0;
+        const duration = this.player?.getDuration ? this.player.getDuration() : (this.player?.audio ? this.player.audio.duration : 0);
         const targetSecs = (parseFloat(seekbar.value) / 100) * duration;
         this.player.seek(targetSecs);
         this.isScrubbing = false;
@@ -300,7 +300,38 @@ export class AudioguideApp {
       if (curTimeEl) curTimeEl.textContent = formatTime(current);
       if (durTimeEl) durTimeEl.textContent = formatTime(duration);
       if (seekbarEl) seekbarEl.value = isNaN(percent) ? 0 : percent;
+
+      this._updateNextButtonPulse(current);
     };
+
+    this.player.onMainAudioEnded = () => {
+      const curTime = this.player?.getCurrentTime ? this.player.getCurrentTime() : 0;
+      this._updateNextButtonPulse(curTime, true);
+    };
+  }
+
+  _updateNextButtonPulse(currentTime, force = false) {
+    if (typeof document === 'undefined') return;
+    const nextBtn = document.getElementById('player-btn-next-step');
+    if (!nextBtn) return;
+
+    if (!this.currentTour || this.currentStepIndex >= this.currentTour.steps.length - 1) {
+      nextBtn.classList.remove('btn-next-pulse');
+      return;
+    }
+
+    const mainDuration = this.player?.mainDuration || 0;
+    if (mainDuration <= 0 && !force) {
+      nextBtn.classList.remove('btn-next-pulse');
+      return;
+    }
+
+    const isTransitionActive = Boolean(this.player?.isTransitionActive);
+    if (force || isTransitionActive || currentTime >= mainDuration) {
+      nextBtn.classList.add('btn-next-pulse');
+    } else {
+      nextBtn.classList.remove('btn-next-pulse');
+    }
   }
 
   applyLocalizedUI() {
@@ -401,8 +432,14 @@ export class AudioguideApp {
 
   navigateTo(viewName) {
     this.currentView = viewName;
-    if (viewName !== 'step' && this.player) {
-      this.player.pause();
+    if (viewName !== 'step') {
+      if (this.player) {
+        this.player.pause();
+      }
+      const nextBtn = typeof document !== 'undefined' ? document.getElementById('player-btn-next-step') : null;
+      if (nextBtn) {
+        nextBtn.classList.remove('btn-next-pulse');
+      }
     }
     if (typeof document === 'undefined') return;
 
@@ -543,10 +580,19 @@ export class AudioguideApp {
 
     const basePath = `${this.getContentDir()}/${this.currentLanguage}/`;
 
+    // Resolve optional transition audio to next step in tour
+    let transitionConfig = null;
+    if (this.currentTour && index < this.currentTour.steps.length - 1) {
+      const nextStepId = this.currentTour.steps[index + 1];
+      if (step.transitions && step.transitions[nextStepId]) {
+        transitionConfig = step.transitions[nextStepId].audio || step.transitions[nextStepId];
+      }
+    }
+
     // Load Audio in Player and start playback immediately upon step arrival
     if (this.player) {
       if (step.audio) {
-        this.player.loadStep(step.audio, basePath);
+        this.player.loadStep(step.audio, transitionConfig, basePath);
         this.player.play();
       } else {
         this.player.loadStep(null);
@@ -554,6 +600,14 @@ export class AudioguideApp {
     }
 
     const hasDOM = typeof document !== 'undefined';
+
+    // Reset next button pulse
+    if (hasDOM) {
+      const nextBtn = document.getElementById('player-btn-next-step');
+      if (nextBtn) {
+        nextBtn.classList.remove('btn-next-pulse');
+      }
+    }
 
     // Update Dropdown selector
     if (hasDOM) {

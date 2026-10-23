@@ -105,6 +105,84 @@ playerPaused = false;
 app.navigateTo('home');
 assert.strictEqual(playerPaused, true, 'Navigating away from step must pause audio playback');
 
+// 5b. Verify step transition resolution and pulse handling
+app.currentTour = { id: 'tour-1', steps: ['step-1', 'step-2'] };
+app.langConfig = {
+  steps: [
+    {
+      id: 'step-1',
+      title: 'Step 1',
+      audio: { webm: 'step1.webm' },
+      transitions: {
+        'step-2': { audio: { webm: 'trans1-2.webm' } }
+      }
+    },
+    { id: 'step-2', title: 'Step 2', audio: { webm: 'step2.webm' } }
+  ]
+};
+
+let loadedTransition = undefined;
+app.player = {
+  pause: () => {},
+  loadStep: (main, trans) => { loadedTransition = trans; },
+  play: () => {}
+};
+
+await app.loadStepByIndex(0);
+assert.deepStrictEqual(loadedTransition, { webm: 'trans1-2.webm' }, 'Must pass resolved transition config to player');
+
+// Last step of tour must not have transition
+loadedTransition = undefined;
+await app.loadStepByIndex(1);
+assert.strictEqual(loadedTransition, null, 'Last step of tour must not have transition');
+
+// Test pulse behavior with mock DOM
+{
+  const classes = new Set();
+  const mockBtn = {
+    classList: {
+      add: (c) => classes.add(c),
+      remove: (c) => classes.delete(c),
+      contains: (c) => classes.has(c)
+    }
+  };
+  globalThis.document = {
+    getElementById: (id) => id === 'player-btn-next-step' ? mockBtn : null
+  };
+
+  app.currentTour = { id: 'tour-1', steps: ['step-1', 'step-2'] };
+  app.currentStepIndex = 0;
+  app.player = {
+    mainDuration: 60,
+    isTransitionActive: false
+  };
+
+  // Before main duration: no pulse
+  app._updateNextButtonPulse(30);
+  assert.strictEqual(mockBtn.classList.contains('btn-next-pulse'), false);
+
+  // Reaching main duration: pulse active
+  app._updateNextButtonPulse(60);
+  assert.strictEqual(mockBtn.classList.contains('btn-next-pulse'), true);
+
+  // During transition: pulse active
+  app.player.isTransitionActive = true;
+  app._updateNextButtonPulse(75);
+  assert.strictEqual(mockBtn.classList.contains('btn-next-pulse'), true);
+
+  // Rewinding back to main audio: pulse inactive
+  app.player.isTransitionActive = false;
+  app._updateNextButtonPulse(20);
+  assert.strictEqual(mockBtn.classList.contains('btn-next-pulse'), false);
+
+  // Last step of tour: no pulse even if currentTime >= mainDuration
+  app.currentStepIndex = 1;
+  app._updateNextButtonPulse(70);
+  assert.strictEqual(mockBtn.classList.contains('btn-next-pulse'), false);
+
+  delete globalThis.document;
+}
+
 // 6. Verify No hardcoded UI strings dictionary in app.js
 const appJsSource = fs.readFileSync(appPath, 'utf8');
 assert(!appJsSource.includes('const UI_STRINGS'), 'UI strings must NOT be hardcoded in app.js dictionary');
