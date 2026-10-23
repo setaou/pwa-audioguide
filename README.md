@@ -246,7 +246,8 @@ Exécute les tests dans un navigateur Chromium réel :
 | `npm run test:e2e` | Lance la suite de tests end-to-end avec Playwright |
 | `npm run validate:demo` | Valide l'intégrité des médias et configurations réels de la démo de Tours |
 | `npm run generate:demo:configs` | Génère uniquement les fichiers `config.yml` de démo pour Tours |
-| `npm run generate:demo` | Génère l'ensemble des médias de démo (textes, images, audio TTS Kokoro) |
+| `npm run generate:demo:transitions` | Génère uniquement les pistes audio de transition inter-étapes |
+| `npm run generate:demo` | Génère l'ensemble des médias de démo (textes, images, audios principaux et transitions TTS Kokoro) |
 
 ---
 
@@ -258,7 +259,10 @@ Pour régénérer les configurations YAML, les textes, photos Wikimedia et piste
 # Générer uniquement les fichiers config.yml de démo :
 npm run generate:demo:configs
 
-# Tout régénérer (configs, photos, textes, audio) :
+# Générer uniquement les audios de transition :
+npm run generate:demo:transitions
+
+# Tout régénérer (configs, photos, textes, audios principaux et transitions) :
 npm run generate:demo
 ```
 

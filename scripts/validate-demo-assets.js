@@ -67,6 +67,29 @@ for (const lang of languages) {
       }
     }
   }
+
+  // Verify transition audio files
+  for (const step of langConfig.steps) {
+    if (step.transitions) {
+      assert(typeof step.transitions === 'object', `Step ${step.id} transitions must be an object`);
+      for (const [targetStepId, transObj] of Object.entries(step.transitions)) {
+        const audioConf = transObj.audio || transObj;
+        assert(audioConf.webm, `Transition from ${step.id} to ${targetStepId} missing webm audio`);
+        assert(audioConf.m4a, `Transition from ${step.id} to ${targetStepId} missing m4a audio`);
+
+        const transWebm = path.join(langDir, audioConf.webm);
+        const transM4a = path.join(langDir, audioConf.m4a);
+
+        assert(fs.existsSync(transWebm), `Transition WebM missing: content/${lang}/${audioConf.webm}`);
+        assert(fs.existsSync(transM4a), `Transition M4A missing: content/${lang}/${audioConf.m4a}`);
+
+        const transWebmSize = fs.statSync(transWebm).size;
+        const transM4aSize = fs.statSync(transM4a).size;
+        assert(transWebmSize > 500, `Transition WebM ${audioConf.webm} must be > 500 bytes (was ${transWebmSize})`);
+        assert(transM4aSize > 500, `Transition M4A ${audioConf.m4a} must be > 500 bytes (was ${transM4aSize})`);
+      }
+    }
+  }
 }
 
 console.log('✓ Demo assets validated successfully!');

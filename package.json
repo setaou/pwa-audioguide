@@ -9,6 +9,7 @@
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e",
     "generate:demo:configs": "python3 scripts/generate_demo_assets.py --configs-only",
+    "generate:demo:transitions": "python3 scripts/generate_demo_assets.py --transitions-only",
     "generate:demo": "python3 scripts/generate_demo_assets.py",
     "validate:demo": "node scripts/validate-demo-assets.js"
   },

@@ -100,6 +100,11 @@ steps:
     audio:
       webm: "facade.webm"
       m4a: "facade.m4a"
+    transitions:
+      "nave":
+        audio:
+          webm: "facade-to-nave.webm"
+          m4a: "facade-to-nave.m4a"
 
   - id: "nave"
     title: "La Nef et les Grandes Voûtes"
@@ -107,6 +112,11 @@ steps:
     audio:
       webm: "nave.webm"
       m4a: "nave.m4a"
+    transitions:
+      "choir-stained-glass":
+        audio:
+          webm: "nave-to-choir.webm"
+          m4a: "nave-to-choir.m4a"
 
   - id: "choir-stained-glass"
     title: "Les Vitraux Radiants du Chœur"
@@ -114,6 +124,15 @@ steps:
     audio:
       webm: "choir.webm"
       m4a: "choir.m4a"
+    transitions:
+      "royal-tomb":
+        audio:
+          webm: "choir-to-tomb.webm"
+          m4a: "choir-to-tomb.m4a"
+      "rose-window":
+        audio:
+          webm: "choir-to-rose.webm"
+          m4a: "choir-to-rose.m4a"
 
   - id: "royal-tomb"
     title: "Le Tombeau des Enfants de Charles VIII"
@@ -121,6 +140,11 @@ steps:
     audio:
       webm: "tomb.webm"
       m4a: "tomb.m4a"
+    transitions:
+      "rose-window":
+        audio:
+          webm: "tomb-to-rose.webm"
+          m4a: "tomb-to-rose.m4a"
 
   - id: "rose-window"
     title: "La Grande Rose et le Grand Orgue"
@@ -193,6 +217,11 @@ steps:
     audio:
       webm: "facade.webm"
       m4a: "facade.m4a"
+    transitions:
+      "nave":
+        audio:
+          webm: "facade-to-nave.webm"
+          m4a: "facade-to-nave.m4a"
 
   - id: "nave"
     title: "The Gothic Nave and Vaults"
@@ -200,6 +229,11 @@ steps:
     audio:
       webm: "nave.webm"
       m4a: "nave.m4a"
+    transitions:
+      "choir-stained-glass":
+        audio:
+          webm: "nave-to-choir.webm"
+          m4a: "nave-to-choir.m4a"
 
   - id: "choir-stained-glass"
     title: "The Radiant Choir Stained Glass"
@@ -207,6 +241,15 @@ steps:
     audio:
       webm: "choir.webm"
       m4a: "choir.m4a"
+    transitions:
+      "royal-tomb":
+        audio:
+          webm: "choir-to-tomb.webm"
+          m4a: "choir-to-tomb.m4a"
+      "rose-window":
+        audio:
+          webm: "choir-to-rose.webm"
+          m4a: "choir-to-rose.m4a"
 
   - id: "royal-tomb"
     title: "Tomb of the Children of Charles VIII"
@@ -214,6 +257,11 @@ steps:
     audio:
       webm: "tomb.webm"
       m4a: "tomb.m4a"
+    transitions:
+      "rose-window":
+        audio:
+          webm: "tomb-to-rose.webm"
+          m4a: "tomb-to-rose.m4a"
 
   - id: "rose-window"
     title: "The West Rose Window and Grand Organ"
@@ -355,6 +403,23 @@ Donated in the early 16th century by Archbishop Martin de Beaune, the intricatel
     }
 }
 
+TRANSITIONS_DATA = {
+    'fr': {
+        'facade-to-nave': "Franchissez à présent les grands portails pour pénétrer dans la fraîcheur et la majesté de la nef.",
+        'nave-to-choir': "Avancez lentement le long de la nef centrale en direction du chœur et des verrières lumineuses.",
+        'choir-to-tomb': "Dirigez-vous maintenant vers le transept sud, sur votre droite, pour découvrir le tombeau royal.",
+        'choir-to-rose': "Revenez vers l'allée centrale et retournez-vous pour contempler la grande rose occidentale.",
+        'tomb-to-rose': "Quittez le transept sud et retournez-vous vers l'entrée ouest pour admirer la rose et le grand orgue."
+    },
+    'en': {
+        'facade-to-nave': "Step now through the central portals into the luminous nave of the cathedral.",
+        'nave-to-choir': "Walk slowly along the central aisle of the nave toward the radiant stained glass of the choir.",
+        'choir-to-tomb': "Turn now to the south transept on your right to discover the royal marble tomb.",
+        'choir-to-rose': "Head back along the nave and look up to admire the great western rose window above the organ.",
+        'tomb-to-rose': "Leave the south transept and face the western portal to admire the rose window and grand organ."
+    }
+}
+
 import time
 
 def download_images():
@@ -446,47 +511,67 @@ def get_kokoro_model():
     from kokoro_onnx import Kokoro
     return Kokoro(model_path, voices_path)
 
-def generate_audio_files():
+def encode_audio(temp_wav, webm_dest, m4a_dest):
+    # 1. Encode to WebM Opus with ffmpeg
+    subprocess.run([
+        'ffmpeg', '-y', '-i', temp_wav,
+        '-c:a', 'libopus', '-b:a', '64k',
+        webm_dest
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
+    # 2. Encode to M4A AAC with ffmpeg
+    subprocess.run([
+        'ffmpeg', '-y', '-i', temp_wav,
+        '-c:a', 'aac', '-b:a', '96k',
+        m4a_dest
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
+    if os.path.exists(temp_wav):
+        os.remove(temp_wav)
+
+def generate_audio_files(transitions_only=False):
     print("Generating high-fidelity neural audio files via Kokoro TTS (Kokoro-82M)...")
     import soundfile as sf
     kokoro = get_kokoro_model()
 
-    for lang, steps in STEPS_DATA.items():
+    for lang in ['fr', 'en']:
         lang_dir = os.path.join(CONTENT_DIR, lang)
         voice = 'ff_siwis' if lang == 'fr' else 'af_heart'
         lang_code = 'fr-fr' if lang == 'fr' else 'en-us'
 
-        for step_id, data in steps.items():
-            narration = data['narration']
-            temp_wav = f"/tmp/kokoro_{lang}_{step_id}.wav"
-            webm_dest = os.path.join(lang_dir, f"{step_id}.webm")
-            m4a_dest = os.path.join(lang_dir, f"{step_id}.m4a")
+        if not transitions_only:
+            steps = STEPS_DATA.get(lang, {})
+            for step_id, data in steps.items():
+                narration = data['narration']
+                temp_wav = f"/tmp/kokoro_{lang}_{step_id}.wav"
+                webm_dest = os.path.join(lang_dir, f"{step_id}.webm")
+                m4a_dest = os.path.join(lang_dir, f"{step_id}.m4a")
 
-            print(f"  -> Synthesizing Kokoro voice for [{lang}] {step_id} (voice: {voice})...")
+                print(f"  -> Synthesizing Kokoro voice for [{lang}] {step_id} (voice: {voice})...")
+                samples, sample_rate = kokoro.create(
+                    narration,
+                    voice=voice,
+                    lang=lang_code,
+                    speed=1.0
+                )
+                sf.write(temp_wav, samples, sample_rate)
+                encode_audio(temp_wav, webm_dest, m4a_dest)
+
+        transitions = TRANSITIONS_DATA.get(lang, {})
+        for trans_id, trans_text in transitions.items():
+            temp_wav = f"/tmp/kokoro_{lang}_{trans_id}.wav"
+            webm_dest = os.path.join(lang_dir, f"{trans_id}.webm")
+            m4a_dest = os.path.join(lang_dir, f"{trans_id}.m4a")
+
+            print(f"  -> Synthesizing Kokoro transition for [{lang}] {trans_id} (voice: {voice})...")
             samples, sample_rate = kokoro.create(
-                narration,
+                trans_text,
                 voice=voice,
                 lang=lang_code,
                 speed=1.0
             )
             sf.write(temp_wav, samples, sample_rate)
-
-            # 2. Encode to WebM Opus with ffmpeg
-            subprocess.run([
-                'ffmpeg', '-y', '-i', temp_wav,
-                '-c:a', 'libopus', '-b:a', '64k',
-                webm_dest
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-
-            # 3. Encode to M4A AAC with ffmpeg
-            subprocess.run([
-                'ffmpeg', '-y', '-i', temp_wav,
-                '-c:a', 'aac', '-b:a', '96k',
-                m4a_dest
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-
-            if os.path.exists(temp_wav):
-                os.remove(temp_wav)
+            encode_audio(temp_wav, webm_dest, m4a_dest)
 
 def write_config_files():
     print("Writing demo YAML configuration files...")
@@ -506,6 +591,7 @@ def write_config_files():
 def main():
     parser = argparse.ArgumentParser(description="Generate demo assets and configuration files.")
     parser.add_argument('--configs-only', action='store_true', help="Only generate YAML configuration files")
+    parser.add_argument('--transitions-only', action='store_true', help="Only generate transition audio files")
     parser.add_argument('--skip-audio', action='store_true', help="Skip heavy Kokoro neural audio synthesis")
     parser.add_argument('--skip-images', action='store_true', help="Skip downloading Wikimedia images")
     args = parser.parse_args()
@@ -515,11 +601,12 @@ def main():
         print("✓ Demo configuration files successfully generated!")
         return
 
-    if not args.skip_images:
+    if not args.skip_images and not args.transitions_only:
         download_images()
-    write_markdown_files()
+    if not args.transitions_only:
+        write_markdown_files()
     if not args.skip_audio:
-        generate_audio_files()
+        generate_audio_files(transitions_only=args.transitions_only)
     print("✓ All demo assets successfully generated!")
 
 if __name__ == '__main__':
