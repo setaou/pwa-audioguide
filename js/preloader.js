@@ -80,6 +80,20 @@ export class TourPreloader {
       }
     }
 
+    // 2b. Transition audio files between consecutive tour steps
+    for (let i = 0; i < (tour.steps || []).length - 1; i++) {
+      const currentStepId = tour.steps[i];
+      const nextStepId = tour.steps[i + 1];
+      const step = stepMap.get(currentStepId);
+      if (step && step.transitions && step.transitions[nextStepId]) {
+        const transConf = step.transitions[nextStepId].audio || step.transitions[nextStepId];
+        const chosenTransAudio = selectOptimalAudio(transConf, this.canPlayType);
+        if (chosenTransAudio) {
+          assetUrls.add(`${basePath}${chosenTransAudio}`);
+        }
+      }
+    }
+
     // 3. Extract images referenced in markdown files
     for (const step of tourSteps) {
       if (step.text_file) {

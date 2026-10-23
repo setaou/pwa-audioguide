@@ -97,6 +97,32 @@ try {
   assert(preloadedFiles.includes('tests/fixtures/content/fr/step-1.md'), 'Must preload custom content dir markdown');
   assert(preloadedFiles.includes('tests/fixtures/content/fr/step-1.webm'), 'Must preload custom content dir audio');
   assert(preloadedFiles.includes('tests/fixtures/content/fr/img-1.jpg'), 'Must preload custom content dir image');
+
+  // Test: Preload tour with step transitions
+  const transitionTour = { id: 'tour-trans', steps: ['step-1', 'step-2'] };
+  const transitionLangConfig = {
+    steps: [
+      {
+        id: 'step-1',
+        text_file: 'step-1.md',
+        audio: { webm: 'step-1.webm', m4a: 'step-1.m4a' },
+        transitions: {
+          'step-2': { audio: { webm: 'trans-1-2.webm', m4a: 'trans-1-2.m4a' } }
+        }
+      },
+      {
+        id: 'step-2',
+        text_file: 'step-2.md',
+        audio: { webm: 'step-2.webm', m4a: 'step-2.m4a' }
+      }
+    ]
+  };
+
+  const transPreloadedFiles = [];
+  await preloader.preloadTour(transitionTour, 'fr', transitionLangConfig, (p) => {
+    transPreloadedFiles.push(p.file);
+  });
+  assert(transPreloadedFiles.includes('tests/fixtures/content/fr/trans-1-2.webm'), 'Must preload transition audio file');
 } finally {
   globalThis.fetch = origFetch;
 }
