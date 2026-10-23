@@ -270,10 +270,10 @@ export class AudioguideApp {
 
       const finishScrubbing = (e) => {
         if (!this.isScrubbing) return;
+        this.isScrubbing = false;
         const duration = this.player?.getDuration ? this.player.getDuration() : (this.player?.audio ? this.player.audio.duration : 0);
         const targetSecs = (parseFloat(seekbar.value) / 100) * duration;
         this.player.seek(targetSecs);
-        this.isScrubbing = false;
       };
 
       seekbar.addEventListener('change', finishScrubbing);

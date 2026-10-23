@@ -234,6 +234,8 @@ export class AudioPlayer {
                 }
               }
             }
+          } else if (this.transitionAudio) {
+            this._resetAudioElement(this.transitionAudio);
           }
         } catch (err) {
           if (this.onError) this.onError(err);
@@ -433,6 +435,7 @@ export class AudioPlayer {
         this.transitionAudio.currentTime = 0;
         this.transitionAudio.play().catch(e => {
           if (this.onError) this.onError(e);
+          this._handleEnded();
         });
       }
     } else {
@@ -441,7 +444,9 @@ export class AudioPlayer {
   }
 
   _handleTransitionEnded() {
-    this.isTransitionActive = false;
+    if (this.transitionAudio && this.transitionDuration > 0) {
+      this.transitionAudio.currentTime = this.transitionDuration;
+    }
     this._handleEnded();
   }
 

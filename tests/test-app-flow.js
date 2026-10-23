@@ -183,6 +183,37 @@ assert.strictEqual(loadedTransition, null, 'Last step of tour must not have tran
   delete globalThis.document;
 }
 
+// Test seekbar event listeners and scrubbing order
+{
+  const seekbarListeners = {};
+  const mockSeekbar = {
+    value: '20',
+    addEventListener: (event, handler) => { seekbarListeners[event] = handler; }
+  };
+  globalThis.document = {
+    getElementById: (id) => id === 'player-seekbar' ? mockSeekbar : null
+  };
+
+  const testApp = new AudioguideApp();
+  testApp.setupUIBindings();
+
+  // Trigger input (starts scrubbing)
+  seekbarListeners['input']?.({ target: { value: '20' } });
+  assert.strictEqual(testApp.isScrubbing, true);
+
+  // Trigger change (finish scrubbing): isScrubbing must be false when seek runs
+  let wasScrubbingDuringSeek = null;
+  testApp.player.seek = () => {
+    wasScrubbingDuringSeek = testApp.isScrubbing;
+  };
+
+  seekbarListeners['change']?.({});
+  assert.strictEqual(wasScrubbingDuringSeek, false, 'isScrubbing must be false during player.seek call');
+  assert.strictEqual(testApp.isScrubbing, false);
+
+  delete globalThis.document;
+}
+
 // 6. Verify No hardcoded UI strings dictionary in app.js
 const appJsSource = fs.readFileSync(appPath, 'utf8');
 assert(!appJsSource.includes('const UI_STRINGS'), 'UI strings must NOT be hardcoded in app.js dictionary');

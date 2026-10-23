@@ -265,6 +265,10 @@ assert.strictEqual(autoAdvanced, false, 'Audio player must NOT auto-advance when
   mockTrans.emit('ended');
   assert.strictEqual(fullEndedEmitted, true, 'Transition audio ended must trigger onEnded');
   assert.strictEqual(dualPlayer.isPlaying(), false, 'Player must be stopped when transition ends');
+  assert.strictEqual(dualPlayer.getCurrentTime(), 140, 'Playhead must remain at 140 after transition ends');
+
+  dualPlayer.skip(-10);
+  assert.strictEqual(dualPlayer.getCurrentTime(), 130, 'Skip -10 after transition ended must land at 130');
 
   // Test graceful degradation on transition error
   const mockMain2 = new MockAudioElement();
