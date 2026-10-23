@@ -31,6 +31,11 @@ assert(htmlContent.includes('manifest.webmanifest'), 'index.html must link manif
 assert(htmlContent.includes('css/styles.css'), 'index.html must link css/styles.css');
 assert(htmlContent.includes("navigator.serviceWorker.register('./service-worker.js', { type: 'module' })"), 'index.html must register Service Worker as module');
 
+const cssContent = fs.readFileSync(cssPath, 'utf8');
+assert(cssContent.includes('.btn-next-pulse'), 'css/styles.css must define .btn-next-pulse');
+assert(cssContent.includes('@keyframes pulseNext'), 'css/styles.css must define @keyframes pulseNext');
+assert(cssContent.includes('prefers-reduced-motion'), 'css/styles.css must respect prefers-reduced-motion for pulse');
+
 // 3. Verify Icons
 const { getIcon } = await import(`file://${iconsPath}`);
 assert(typeof getIcon === 'function', 'getIcon must be a function');
