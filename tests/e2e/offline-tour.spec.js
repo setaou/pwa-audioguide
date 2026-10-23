@@ -57,11 +57,10 @@ test.describe('Offline Tour & Service Worker Journey (Test Fixtures)', () => {
     await expect(page.locator('#step-body-markdown')).toContainText('Voici une description détaillée');
 
     // Verify carousel images load from offline cache
-    const imgLoaded = await page.evaluate(() => {
+    await page.waitForFunction(() => {
       const img = document.querySelector('.carousel-slide img');
-      return img && img.complete && img.naturalWidth > 0;
-    });
-    expect(imgLoaded).toBe(true);
+      return Boolean(img && img.complete && img.naturalWidth > 0);
+    }, { timeout: 10000 });
 
     // 7. Test offline audio playback
     await page.evaluate(async () => {
