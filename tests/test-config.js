@@ -100,6 +100,16 @@ function verifyLanguageConfig(langPath, langCode) {
     assert(step.audio, `step ${step.id} must have audio`);
     assert(step.audio.webm, `step ${step.id} must have audio.webm`);
     assert(step.audio.m4a, `step ${step.id} must have audio.m4a`);
+
+    // Verify optional transitions schema if present on step
+    if (step.transitions) {
+      assert(typeof step.transitions === 'object', `step ${step.id} transitions must be an object`);
+      for (const [targetStepId, transObj] of Object.entries(step.transitions)) {
+        assert(stepIds.has(targetStepId), `step ${step.id} transition targets unknown step: ${targetStepId}`);
+        const audioConf = transObj.audio || transObj;
+        assert(audioConf.webm && audioConf.m4a, `transition to ${targetStepId} must provide webm and m4a audio`);
+      }
+    }
   }
 
   // Verify tours definitions

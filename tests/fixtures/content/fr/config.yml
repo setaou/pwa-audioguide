@@ -40,6 +40,11 @@ steps:
     audio:
       webm: "step-1.webm"
       m4a: "step-1.m4a"
+    transitions:
+      "step-2":
+        audio:
+          webm: "step-2.webm"
+          m4a: "step-2.m4a"
   - id: "step-2"
     title: "Étape Fictive 2"
     text_file: "step-2.md"

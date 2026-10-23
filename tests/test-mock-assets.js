@@ -45,6 +45,18 @@ for (const lang of languages) {
     assert(fs.statSync(webmPath).size > 0, `Mock WebM audio ${step.audio.webm} must not be empty`);
     assert(fs.statSync(m4aPath).size > 0, `Mock M4A audio ${step.audio.m4a} must not be empty`);
 
+    if (step.transitions) {
+      for (const [targetId, transObj] of Object.entries(step.transitions)) {
+        const audioConf = transObj.audio || transObj;
+        const transWebm = path.join(langDir, audioConf.webm);
+        const transM4a = path.join(langDir, audioConf.m4a);
+        assert(fs.existsSync(transWebm), `Mock transition webm missing: ${transWebm}`);
+        assert(fs.existsSync(transM4a), `Mock transition m4a missing: ${transM4a}`);
+        assert(fs.statSync(transWebm).size > 0, `Mock transition webm must not be empty`);
+        assert(fs.statSync(transM4a).size > 0, `Mock transition m4a must not be empty`);
+      }
+    }
+
     // Check all referenced images in markdown exist
     const imgRegex = /!\[.*?\]\(([^)\s]+)/g;
     let match;
