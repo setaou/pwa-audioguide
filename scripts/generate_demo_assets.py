@@ -12,6 +12,7 @@ import os
 import subprocess
 import urllib.request
 import shutil
+import time
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTENT_DIR = os.path.join(ROOT_DIR, 'content')
@@ -72,25 +73,39 @@ ui:
   carousel_slide: "Image {0}"
 
 tours:
-  - id: "essential"
-    title: "Les Grands Incontournables"
-    description: "Parcourez les chefs-d'œuvre majeurs : la façade flamboyante, la nef lumineuse, les vitraux et le tombeau royal."
-    duration: "40 min"
-    badge: "Recommandé"
+  - id: "express"
+    title: "Visite Express - Les Essentiels"
+    description: "Découvrez l'essentiel en 15 minutes : la spectaculaire façade flamboyante, l'envolée de la nef gothique et le chœur rayonnant."
+    duration: "15 min"
+    badge: "Express (15 min)"
     steps:
       - "facade"
       - "nave"
       - "choir-stained-glass"
+
+  - id: "complete"
+    title: "Grand Parcours Découverte"
+    description: "Une exploration complète de 45 minutes : architecture flamboyante, verrières médiévales, tombeau Renaissance et cloître de la Psalette."
+    duration: "45 min"
+    badge: "Complet (45 min)"
+    steps:
+      - "facade"
+      - "nave"
+      - "choir-stained-glass"
+      - "stained-glass-martin"
       - "royal-tomb"
       - "rose-window"
+      - "cloisters"
 
   - id: "stained-glass"
-    title: "Vitraux & Lumières du XIIIe"
-    description: "Une immersion dans l'un des ensembles de vitraux médiévaux les plus complets de France."
-    duration: "25 min"
+    title: "Vitraux & Lumières Médiévales"
+    description: "Une immersion approfondie de 30 minutes dans l'un des ensembles de vitraux des XIIIe et XIVe siècles les plus préservés d'Europe."
+    duration: "30 min"
     badge: "Art & Vitraux"
     steps:
       - "choir-stained-glass"
+      - "stained-glass-martin"
+      - "stained-glass-creation"
       - "rose-window"
 
 steps:
@@ -125,6 +140,10 @@ steps:
       webm: "choir.webm"
       m4a: "choir.m4a"
     transitions:
+      "stained-glass-martin":
+        audio:
+          webm: "choir-to-martin.webm"
+          m4a: "choir-to-martin.m4a"
       "royal-tomb":
         audio:
           webm: "choir-to-tomb.webm"
@@ -133,6 +152,34 @@ steps:
         audio:
           webm: "choir-to-rose.webm"
           m4a: "choir-to-rose.m4a"
+
+  - id: "stained-glass-martin"
+    title: "La Verrière Légendaire de Saint Martin"
+    text_file: "martin.md"
+    audio:
+      webm: "martin.webm"
+      m4a: "martin.m4a"
+    transitions:
+      "stained-glass-creation":
+        audio:
+          webm: "martin-to-creation.webm"
+          m4a: "martin-to-creation.m4a"
+      "royal-tomb":
+        audio:
+          webm: "martin-to-tomb.webm"
+          m4a: "martin-to-tomb.m4a"
+
+  - id: "stained-glass-creation"
+    title: "La Verrière de la Création et du Salut"
+    text_file: "creation.md"
+    audio:
+      webm: "creation.webm"
+      m4a: "creation.m4a"
+    transitions:
+      "rose-window":
+        audio:
+          webm: "creation-to-rose.webm"
+          m4a: "creation-to-rose.m4a"
 
   - id: "royal-tomb"
     title: "Le Tombeau des Enfants de Charles VIII"
@@ -152,6 +199,18 @@ steps:
     audio:
       webm: "rose.webm"
       m4a: "rose.m4a"
+    transitions:
+      "cloisters":
+        audio:
+          webm: "rose-to-cloisters.webm"
+          m4a: "rose-to-cloisters.m4a"
+
+  - id: "cloisters"
+    title: "Le Cloître de la Psalette"
+    text_file: "cloisters.md"
+    audio:
+      webm: "cloisters.webm"
+      m4a: "cloisters.m4a"
 """,
     'en': """monument:
   name: "Tours Cathedral (Saint-Gatien)"
@@ -189,25 +248,39 @@ ui:
   carousel_slide: "Slide {0}"
 
 tours:
-  - id: "essential"
-    title: "The Highlights Tour"
-    description: "Explore the cathedral's essential masterpieces: the Flamboyant facade, soaring nave, stained glass, and royal tomb."
-    duration: "40 min"
-    badge: "Recommended"
+  - id: "express"
+    title: "Express Tour - The Highlights"
+    description: "Discover the essentials in 15 minutes: the soaring flamboyant facade, the Gothic nave, and the luminous radiant choir."
+    duration: "15 min"
+    badge: "Express (15 min)"
     steps:
       - "facade"
       - "nave"
       - "choir-stained-glass"
+
+  - id: "complete"
+    title: "Grand Discovery Tour"
+    description: "A comprehensive 45-minute journey: flamboyant architecture, medieval windows, the royal Renaissance tomb, and the serene Psalette cloister."
+    duration: "45 min"
+    badge: "Complete (45 min)"
+    steps:
+      - "facade"
+      - "nave"
+      - "choir-stained-glass"
+      - "stained-glass-martin"
       - "royal-tomb"
       - "rose-window"
+      - "cloisters"
 
   - id: "stained-glass"
-    title: "13th-Century Stained Glass & Light"
-    description: "An immersion into one of the most complete medieval stained glass collections in France."
-    duration: "25 min"
+    title: "Medieval Stained Glass & Light"
+    description: "An in-depth 30-minute exploration of one of Europe's most intact ensembles of 13th- and 14th-century stained glass."
+    duration: "30 min"
     badge: "Art & Windows"
     steps:
       - "choir-stained-glass"
+      - "stained-glass-martin"
+      - "stained-glass-creation"
       - "rose-window"
 
 steps:
@@ -242,6 +315,10 @@ steps:
       webm: "choir.webm"
       m4a: "choir.m4a"
     transitions:
+      "stained-glass-martin":
+        audio:
+          webm: "choir-to-martin.webm"
+          m4a: "choir-to-martin.m4a"
       "royal-tomb":
         audio:
           webm: "choir-to-tomb.webm"
@@ -250,6 +327,34 @@ steps:
         audio:
           webm: "choir-to-rose.webm"
           m4a: "choir-to-rose.m4a"
+
+  - id: "stained-glass-martin"
+    title: "The Saint Martin Stained Glass"
+    text_file: "martin.md"
+    audio:
+      webm: "martin.webm"
+      m4a: "martin.m4a"
+    transitions:
+      "stained-glass-creation":
+        audio:
+          webm: "martin-to-creation.webm"
+          m4a: "martin-to-creation.m4a"
+      "royal-tomb":
+        audio:
+          webm: "martin-to-tomb.webm"
+          m4a: "martin-to-tomb.m4a"
+
+  - id: "stained-glass-creation"
+    title: "The Creation and Genesis Window"
+    text_file: "creation.md"
+    audio:
+      webm: "creation.webm"
+      m4a: "creation.m4a"
+    transitions:
+      "rose-window":
+        audio:
+          webm: "creation-to-rose.webm"
+          m4a: "creation-to-rose.m4a"
 
   - id: "royal-tomb"
     title: "Tomb of the Children of Charles VIII"
@@ -269,6 +374,18 @@ steps:
     audio:
       webm: "rose.webm"
       m4a: "rose.m4a"
+    transitions:
+      "cloisters":
+        audio:
+          webm: "rose-to-cloisters.webm"
+          m4a: "rose-to-cloisters.m4a"
+
+  - id: "cloisters"
+    title: "The Psalette Cloister"
+    text_file: "cloisters.md"
+    audio:
+      webm: "cloisters.webm"
+      m4a: "cloisters.m4a"
 """
 }
 
@@ -280,10 +397,16 @@ IMAGES = {
     'nave-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/2/2c/Tours_-_Cath%C3%A9drale_Saint-Gatien_-_vo%C3%BBtes_de_la_nef.jpg',
     'choir-1.jpg': 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Cath%C3%A9drale_de_Tours_-_verri%C3%A8re_de_Saint_Martin_1.jpg',
     'choir-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/5/5d/Tours_-_Cath%C3%A9drale_Saint-Gatien_-_Exterior_-_05.jpg',
+    'martin-1.jpg': 'https://upload.wikimedia.org/wikipedia/commons/d/d2/Cath%C3%A9drale_Saint-Gatien_-_int%C3%A9rieur_-_vitrail_%28Tours%29_%281%29.jpg',
+    'martin-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/9/91/Cath%C3%A9drale_Saint-Gatien_-_int%C3%A9rieur_-_vitrail_%28Tours%29_%282%29.jpg',
+    'creation-1.jpg': 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Tours_%28Indre-et-Loire%29_-_Cath%C3%A9drale_Saint-Gatien_-_Vitrail_%22La_cr%C3%A9ation%22_XIIIe_%28baie_216%29_%2851282607643%29.jpg',
+    'creation-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Cath%C3%A9drale_Saint-Gatien_-_int%C3%A9rieur_-_vitrail_%28Tours%29_%283%29.jpg',
     'tomb-1.jpg': 'https://upload.wikimedia.org/wikipedia/commons/1/10/Tomb_of_the_children_of_Charles_VIII_Tours.jpg',
     'tomb-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/3/33/Tomb_of_the_children_of_Charles_VIII_Tours_2.jpg',
     'rose-1.jpg': 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Cath%C3%A9drale_de_Tours_-_rosace_et_orgue.jpg',
-    'rose-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/9/94/Tours_-_Cath%C3%A9drale_Saint-Gatien_-_Exterior_-_06.jpg'
+    'rose-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/9/94/Tours_-_Cath%C3%A9drale_Saint-Gatien_-_Exterior_-_06.jpg',
+    'cloisters-1.jpg': 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Tours_-_Clo%C3%AEtre_de_la_Psalette_-_Ext%C3%A9rieur_-_1.jpg',
+    'cloisters-2.jpg': 'https://upload.wikimedia.org/wikipedia/commons/0/06/Tours_-_Clo%C3%AEtre_de_la_Psalette_-_Ext%C3%A9rieur_-_2.jpg'
 }
 
 STEPS_DATA = {
@@ -291,136 +414,274 @@ STEPS_DATA = {
         'facade': {
             'text': """## La Façade Occidentale Flamboyante
 
-La façade de la cathédrale Saint-Gatien de Tours est l'un des sommets du style **gothique flamboyant** en France. Élevée au début du XVIe siècle, elle impressionne par sa délicate dentelle de pierre et la richesse sculpturale de ses trois portails.
+La façade de la cathédrale Saint-Gatien de Tours constitue l'un des sommets incontestés du **gothique flamboyant** en France. Érigée pour l'essentiel entre le début du XVe siècle et le premier quart du XVIe siècle en pierre de tuffeau de Touraine, elle déploie une prodigieuse dentelle minérale sculptée qui semble défier la pesanteur.
 
-![Vue majestueuse de la façade et de ses deux tours culminant à près de 70 mètres](facade-1.jpg)
-![Détail des voussures et du décor flamboyant des portails occidentaux](facade-2.jpg)
+![Vue d'ensemble de la façade occidentale et de ses deux tours culminant à près de 70 mètres](facade-1.jpg)
+![Détail des voussures flamboyantes et des délicats gâbles ajourés des portails](facade-2.jpg)
 
-Remarquez les deux tours : elles s'achèvent par des couronnements en dôme de style **Renaissance**, illustrant la transition architecturale entre le Moyen Âge et la Renaissance française sous les rois de France en Val de Loire.""",
-            'narration': "Bienvenue devant la façade occidentale de la cathédrale Saint-Gatien de Tours. Levez les yeux vers cette véritable dentelle de pierre calcaire. Construite à la fin du Moyen Âge, cette façade offre trois portails sculptés surmontés de pignons ajourés. Les deux tours culminent à près de soixante-dix mètres de hauteur et sont couronnées par des lanternons de style Renaissance."
+### Une dentelle de pierre et trois portails sculptés
+Observez l'élévation des trois portails en tiers-point, surmontés de hauts gâbles ajourés et de voussures foisonnantes où s'entremêlent rinceaux de feuillages, dais et figures d'anges musiciens. Bien que les statues de saints des trumeaux aient souffert des guerres de Religion, l'architecture conserve une inventivité ornementale saisissante.
+
+### Le dialogue entre Gothique et Renaissance
+Levez le regard vers le sommet des deux tours qui culminent à près de 70 mètres. Remarquez la transition : les soubassements et contreforts gothiques cèdent progressivement la place à des couronnements octogonaux coiffés de lanternons Renaissance. Cet étagement exceptionnel illustre le carrefour stylistique qui s'opère en Val de Loire sous les règnes de Charles VIII et Louis XII.""",
+            'narration': "Bienvenue devant la façade occidentale de la cathédrale Saint-Gatien de Tours. Prenez le temps de lever les yeux vers cette splendide dentelle de pierre calcaire. Construite à la fin du Moyen Âge, elle incarne l'apogée du style gothique flamboyant avec ses trois portails sculptés et ses gâbles élancés. Remarquez les deux tours qui s'élèvent à près de soixante-dix mètres de hauteur : à leur sommet, les lanternons octogonaux annoncent déjà la première Renaissance française, reflet du rayonnement royal des châteaux de la Loire."
         },
         'nave': {
             'text': """## La Nef et les Grandes Voûtes Gothiques
 
-En franchissant le portail, pénétrez dans un volume monumental et élancé. La nef centrale s'élève à **29 mètres de hauteur**, baignée d'une clarté remarquable grâce à ses grandes baies et son triforium ajouré.
+En franchissant les portails, l'obscurité de l'entrée s'efface pour laisser place à un vaisseau de pierre d'une harmonie lumineuse exemplaire. La nef centrale s'élève à près de **29 mètres de hauteur**, guidant irrésistiblement le regard vers le chœur.
 
-![Perspective majestueuse le long de la nef vers le chœur](nave-1.jpg)
-![Détail des voûtes sur croisée d'ogives et de l'élévation gothique rayonnante](nave-2.jpg)
+![Perspective majestueuse le long de la nef centrale vers le chœur rayonnant](nave-1.jpg)
+![Détail des voûtes sur croisée d'ogives et des faisceaux de colonnettes](nave-2.jpg)
 
-La construction de la nef s'est étalée sur plusieurs générations, du XIIIe au XVe siècle, tout en conservant une parfaite harmonie dans les proportions et les nervures des croisées d'ogives.""",
-            'narration': "Vous voici dans la nef de la cathédrale Saint-Gatien. Prenez le temps d'admirer la sensation d'élévation et d'élan vertical. Les voûtes culminent à vingt-neuf mètres de hauteur. L'élévation à trois niveaux comprend les grandes arcades, le triforium ajouré et les fenêtres hautes qui inondent l'espace d'une lumière douce."
+### Une construction séculaire maîtrisée
+Le chantier de la nef s'est étalé sur plus de deux siècles, du XIIIe siècle jusqu'au milieu du XVe siècle. Malgré cette durée considérable, les maîtres d'œuvre successifs ont respecté le parti architectural originel, maintenant une continuité exemplaire dans le profil des nervures et l'alignement des piliers fasciculés.
+
+### L'élévation à trois niveaux
+Admirez l'équilibre de l'élévation intérieure : au rez-de-chaussée, les grandes arcades brisées ouvrent sur les collatéraux ; au niveau intermédiaire, un élégant triforium ajouré allège la structure ; au sommet, les vastes fenêtres hautes inondent l'édifice d'une clarté diffuse. L'ossature en arcs d'ogive reporte les poussées vers les arcs-boutants extérieurs, permettant ainsi d'ouvrir largement les murs à la lumière.""",
+            'narration': "Vous voici au cœur de la nef de Saint-Gatien. Laissez votre regard s'élever le long des faisceaux de colonnettes jusqu'aux voûtes sur croisées d'ogives, suspendues à vingt-neuf mètres au-dessus du sol. Remarquez la remarquable homogénéité de ce vaisseau, dont la construction dura pourtant plus de deux siècles. Les grandes arcades, le triforium ajouré et les fenêtres hautes composent une élévation classique et lumineuse qui guide naturellement vos pas vers le chœur."
         },
         'choir': {
             'text': """## Les Vitraux Radiants du Chœur (XIIIe siècle)
 
-Le chœur de Saint-Gatien conserve l'un des trésors les plus précieux du patrimoine médiéval français : sa collection de **vitraux du XIIIe siècle**.
+Le chevet et l'abside de la cathédrale de Tours conservent l'un des ensembles de **verrières médiévales du XIIIe siècle** les plus exceptionnels et complets d'Europe occidentale. Contemporaines des vitraux de la Sainte-Chapelle de Paris, ces baies hautes constituent un écrin de lumière colorée d'une ferveur intacte.
 
-![Les verrières légendaires du chœur rayonnant consacrées à la vie du Christ et aux saints](choir-1.jpg)
+![Les verrières légendaires du chœur rayonnant consacrées au Christ et aux saints](choir-1.jpg)
 ![Vue extérieure du chevet rayonnant et de ses arcs-boutants étagés](choir-2.jpg)
 
-Les verrières de l'abside, contemporaines de la Sainte-Chapelle de Paris, se distinguent par l'intensité de leurs rouges et de leurs bleus cobalt profonds. Elles narrent l'histoire sainte et la vie de saint Martin, patron de la Touraine.""",
-            'narration': "Avancez vers le fond du chœur. Vous admirez ici un ensemble exceptionnel de vitraux du treizième siècle, miraculeusement préservés à travers les siècles. Observez l'éclat des rouges et la profondeur des bleus de cobalt. Ces verrières racontent notamment la légende de saint Martin, grande figure de la ville de Tours."
+### La théologie de la lumière médiévale
+Au XIIIe siècle, la lumière qui traverse le vitrail est perçue par les théologiens comme la manifestation visible du divin (la *lux divina*). Les maîtres-verriers tourangeaux ont utilisé des verres soufflés à la bouche teintés dans la masse, dominés par l'alliance mythique des rouges rubis et des bleus cobalt.
+
+### Une disposition théologique rigoureuse
+Les quinze baies hautes du chœur déploient un programme iconographique savamment articulé : au centre, la verrière axiale célèbre l'Incarnation et la Passion du Christ, entourée par les récits de l'Ancien Testament et les vies exemplaires des apôtres et des saints évangélisateurs de la Gaule.""",
+            'narration': "Avancez jusqu'au fond de la cathédrale et contemplez les verrières hautes du chœur. Vous admirez ici un trésor inestimable : quinze baies du treizième siècle miraculeusement parvenues jusqu'à nous. Remarquez l'intensité vibrante du rouge rubis et la profondeur du bleu cobalt, comparables à ceux de la Sainte-Chapelle de Paris. À cette époque, la lumière filtrée par le verre était vue comme une présence céleste illuminant les récits sacrés au-dessus de l'autel."
+        },
+        'martin': {
+            'text': """## La Verrière Légendaire de Saint Martin
+
+Parmi les verrières du XIIIe siècle du chœur, celle consacrée à **saint Martin de Tours** revêt une importance historique et spirituelle capitale pour la Touraine et toute la chrétienté occidentale.
+
+![La verrière légendaire racontant les épisodes marquants de la vie de saint Martin](martin-1.jpg)
+![Détail d'un médaillon du XIIIe siècle montrant la finesse du trait de grisaille](martin-2.jpg)
+
+### La bande dessinée du Moyen Âge
+Organisée en registres superposés de médaillons géométriques (quadrilobes et cercles), la verrière fonctionne comme un grand livre d'images accessible à tous les pèlerins. On y reconnaît le jeune légionnaire romain partageant son manteau avec un pauvre aux portes d'Amiens, sa conversion, son baptême et ses nombreux miracles accomplis en Gaule.
+
+### Une œuvre de mémoire locale
+Devenu évêque de Tours en 371 et fondateur des abbayes de Ligugé et Marmoutier, saint Martin fit de la cité tourangelle un pôle de pèlerinage majeur du monde chrétien. Les détails anatomiques, les plis des drapés et l'expressivité des visages peints à la grisaille témoignent de la virtuosité des ateliers royaux de verriers du Val de Loire.""",
+            'narration': "Tournez votre regard vers la verrière consacrée à saint Martin, grande figure de la Touraine et apôtre des Gaules. Ce vitrail se lit de bas en haut comme une chronique illustrée. Dans les médaillons médiévaux, observez la célèbre scène où Martin, encore soldat romain, tranche son manteau d'un coup d'épée pour en vêtir un mendiant. La finesse des visages peints à la grisaille et la vivacité des couleurs racontent la vie du saint évêque qui attira tant de pèlerins à Tours."
+        },
+        'creation': {
+            'text': """## La Verrière de la Création et du Salut
+
+Au cœur de l'abside rayonnante, la **baie 216** déploie une fresque lumineuse grandiose retraçant les origines du monde selon la Genèse et l'accomplissement du Salut chrétien.
+
+![La verrière de la Création du XIIIe siècle et son agencement de médaillons](creation-1.jpg)
+![Détail des baies supérieures de l'abside rayonnant sous le soleil](creation-2.jpg)
+
+### Des médaillons narratifs d'une richesse infinie
+Chaque médaillon de cette verrière présente une composition miniaturisée saisissante : la séparation des eaux et de la lumière, la création des astres, des animaux et du premier couple humain, Adam et Ève. La précision des gestes et la diversité des tons ocres, jaunes et verts complètent la palette royale bleu et rouge.
+
+### L'art verrier au XIIIe siècle : prouesse technique
+Réalisés par assemblage de petits morceaux de verre soufflé sertis dans des résilles de plomb, ces vitraux devaient résister aux assauts du vent tout en laissant filtrer un maximum de clarté. L'armature métallique en barlotières soutient l'ensemble et souligne le rythme architectural de la baie gothique.""",
+            'narration': "Approchez-vous de la verrière de la Création, l'une des baies les plus fascinantes du treizième siècle. À travers une succession de médaillons délicats, le maître-verrier illustre la Genèse : le chaos originel, la création des étoiles, des animaux et les premiers pas d'Adam et Ève dans le jardin d'Éden. Admirez l'incroyable prouesse technique de ces artisans, assemblant des centaines de pièces de verre soufflé dans des résilles de plomb pour composer cette fresque cosmique."
         },
         'tomb': {
             'text': """## Le Tombeau des Enfants de Charles VIII et Anne de Bretagne
 
-Dans le transept sud repose un chef-d'œuvre de la première Renaissance française : le tombeau en marbre de Carrare de Charles-Orland et Charles, enfants du roi **Charles VIII** et de la reine **Anne de Bretagne**.
+Érigé dans le transept sud de la cathédrale, ce monument funéraire d'une grâce infinie est unanimement reconnu comme l'un des premiers et plus purs chefs-d'œuvre de la **Renaissance française**.
 
-![Le tombeau de marbre blanc sculpté par l'atelier de Michel Colombe](tomb-1.jpg)
-![Détail des angelots soutenant les écus aux armes de France et de Bretagne](tomb-2.jpg)
+![Le somptueux tombeau en marbre de Carrare sculpté par l'atelier de Michel Colombe](tomb-1.jpg)
+![Détail des angelots et des rinceaux Renaissance ornant le soubassement](tomb-2.jpg)
 
-Sculpté vers 1506 par l'atelier du maître tourangeau **Michel Colombe** et de Jérôme Pacherot, ce monument funéraire allie la tradition des gisants français aux motifs italiens sculptés sur le socle.""",
-            'narration': "Arrêtez-vous devant ce magnifique tombeau en marbre blanc de Carrare. Il a été commandé par la reine Anne de Bretagne et le roi Charles VIII pour leurs enfants morts en bas âge. Réalisé vers quinze cent six par l'atelier de Michel Colombe, il marque l'éclosion de la Renaissance artistique dans le Val de Loire avec ses angelots et ses arabesques délicates."
+### Un monument de deuil royal
+Commandé par la reine Anne de Bretagne et le roi Charles VIII, ce cénotaphe était destiné à abriter les dépouilles de leurs enfants morts en bas âge : Charles-Orland, dauphin de France décédé à l'âge de trois ans en 1495, et son jeune frère Charles, disparu à quelques semaines de vie en 1496.
+
+### Michel Colombe et Jérôme Pacherot : la fusion des arts
+Achevé en 1506, le monument réunit le sculpteur breton **Michel Colombe** et le maître marbrier italien **Jérôme Pacherot**. Sur la dalle supérieure reposent les gisants des deux enfants royaux en prière, veillés par des anges aux ailes délicatement éployées. Sur la cuve de marbre blanc de Carrare, le décor d'arabesques, de trophées et d'angelots italianisants marque l'entrée triomphale du renouveau de l'art renaissant en Val de Loire.""",
+            'narration': "Arrêtez-vous devant ce monument en marbre blanc de Carrare, pur chef-d'œuvre de la première Renaissance française achevé en quinze cent six. Commandé par Anne de Bretagne et Charles VIII pour leurs enfants morts en bas âge, ce tombeau allie la tradition des gisants médiévaux à la grâce italienne. Observez la tendresse des deux angelots soutenant les écus royaux et l'extrême finesse des arabesques sculptées sur le socle par l'atelier de Michel Colombe et Jérôme Pacherot."
         },
         'rose': {
             'text': """## La Grande Rose et le Grand Orgue Historique
 
-En vous retournant vers la façade ouest, contemplez la majestueuse rose du XIVe siècle ainsi que le buffet du **Grand Orgue**, suspendu au revers du portail central.
+Au revers de la façade occidentale, le regard est happé par l'éblouissante composition formée par la **grande rose du XIVe siècle** et le buffet sculpté du **Grand Orgue**.
 
-![La grande rose occidentale illuminant le buffet de l'orgue historique](rose-1.jpg)
-![Vue d'ensemble de la tribune et des tuyaux du grand orgue Renaissance](rose-2.jpg)
+![La grande rose occidentale illuminant le buffet monumental de l'orgue historique](rose-1.jpg)
+![Vue détaillée du buffet Renaissance en chêne sculpté et de sa tuyauterie](rose-2.jpg)
 
-Donné par l'archevêque Martin de Beaune au début du XVIe siècle, le buffet en chêne sculpté abrite aujourd'hui un instrument symphonique prestigieux régulièrement joué lors de concerts et d'offices.""",
-            'narration': "En vous retournant vers la sortie, levez la tête pour contempler la grande rose occidentale du quatorzième siècle et le splendide buffet du grand orgue. Ce meuble en chêne sculpté date du seizième siècle. Il abrite l'un des plus beaux instruments de la région, réputé pour sa sonorité chaude et puissante."
+### La géométrie rayonnante de la rose
+D'un diamètre impressionnant, la rose occidentale déploie un lacis géométrique de meneaux de pierre rayonnants qui se ramifient en fleurs de lys et en quadrilobes flamboyants. À la différence des verrières du chœur, les vitraux du XIVe siècle utilisent largement le jaune d'argent et des verres plus clairs, diffusant une lumière dorée et aérienne.
+
+### Un instrument de musique d'exception
+Suspendu en nid d'hirondelle au-dessus de la tribune, le buffet en chêne massif sculpté a été offert au début du XVIe siècle par l'archevêque Martin de Beaune. Remanié à l'époque romantique, cet orgue grandiose compte aujourd'hui quatre claviers, un pédalier et cinquante-six jeux, offrant une acoustique chaleureuse réputée dans le monde entier.""",
+            'narration': "Retournez-vous vers l'entrée ouest et levez la tête vers la tribune. Vous contemplez la majestueuse rose du quatorzième siècle et le magnifique buffet du grand orgue. Observez la géométrie éclatante de la rose, dont les verres plus clairs et dorés éclairent la nef au coucher du soleil. En dessous, le meuble en chêne sculpté offert par l'archevêque Martin de Beaune au seizième siècle abrite un orgue symphonique remarquable, régulièrement célébré lors de concerts prestigieux."
+        },
+        'cloisters': {
+            'text': """## Le Cloître de la Psalette
+
+Adossé au flanc nord du chœur de la cathédrale, le **cloître de la Psalette** forme un ensemble monastique et capitulaire préservé d'une quiétude absolue, classé au titre des Monuments Historiques.
+
+![Les galeries voûtées du cloître de la Psalette ouvrant sur le jardin intérieur](cloisters-1.jpg)
+![Détail de l'escalier à vis Renaissance et des voûtes finement nervurées](cloisters-2.jpg)
+
+### Le lieu des chanoines et de la musique
+Son nom pittoresque de « Psalette » provient des enfants de chœur qui venaient y apprendre le chant des psaumes et la liturgie au cours du Moyen Âge. Le cloître servait également de lieu de travail et de méditation pour les chanoines du chapitre cathédral.
+
+### Une féerie d'architecture gothique et renaissance
+Composé de trois galeries construites entre les années 1440 et 1520, le cloître témoigne d'une transition stylistique remarquable. Tandis que les voûtes retombent sur des culs-de-lampe figuratifs médiévaux, le célèbre escalier à vis extérieur et la librairie capitulaire annoncent la Renaissance avec leurs pilastres délicats et leurs médaillons sculptés.""",
+            'narration': "Pénétrez à présent dans le cloître de la Psalette, adossé au flanc nord de la cathédrale. C'est ici que les jeunes clercs apprenaient autrefois le chant des psaumes, qui a donné son nom au lieu. En longeant ces galeries voûtées ouvrant sur un jardin paisible, admirez l'escalier à vis Renaissance et la délicatesse des sculptures. Véritable havre de paix et de silence, ce cloître offre une conclusion contemplative parfaite à votre découverte de Saint-Gatien."
         }
     },
     'en': {
         'facade': {
             'text': """## The Flamboyant Western Facade
 
-The western facade of Saint-Gatien Cathedral in Tours is a celebrated masterpiece of **Flamboyant Gothic** architecture. Completed in the early 16th century, it is famed for its delicate limestone tracery and sculpted portals.
+The western facade of Saint-Gatien Cathedral in Tours stands as an undisputed pinnacle of **Flamboyant Gothic** architecture in France. Erected between the early 15th and early 16th centuries from local Touraine limestone, it presents a breathtaking stone lacework that appears to defy gravity.
 
-![Majestic view of the western facade and the two towers rising nearly 70 meters](facade-1.jpg)
-![Close-up of the sculpted flamboyant arches of the central portals](facade-2.jpg)
+![General view of the western facade and its twin towers rising nearly 70 meters](facade-1.jpg)
+![Detail of the flamboyant mouldings and delicate openwork gables above the portals](facade-2.jpg)
 
-Notice the twin towers: their summits are capped with graceful **Renaissance octagonal domes**, marking the transition between the Middle Ages and the French Renaissance in the royal Loire Valley.""",
-            'narration': "Welcome to the western facade of Tours Cathedral. Look up at this astonishing stone lace carved from local limestone. Erected between the fourteenth and sixteenth centuries, it features three sculpted portals surmounted by perforated gables and twin towers crowned with Renaissance domes."
+### Stone Lace and Three Sculpted Portals
+Take in the dramatic elevation of the three pointed portals, crowned with towering perforated gables and luxuriant mouldings carved with intertwined acanthus leaves, canopies, and musician angels. While some portal statues suffered during the Wars of Religion, the structural ornament retains an astounding creative vigor.
+
+### The Dialogue between Gothic and Renaissance
+Look up toward the peaks of both towers rising nearly 70 meters high. Notice the subtle architectural transition: the Gothic buttresses and spires give way to graceful octagonal domes and lantern crowns. This harmony reflects the vibrant artistic crossroads of the Loire Valley under Kings Charles VIII and Louis XII.""",
+            'narration': "Welcome to the western facade of Saint-Gatien Cathedral in Tours. Take a moment to gaze up at this astonishing stone lacework carved from local limestone. Erected in the late Middle Ages, it embodies the zenith of the Flamboyant Gothic style with its three sculpted portals and towering perforated gables. Notice the twin towers rising nearly seventy meters above: at their summit, octagonal Renaissance crowns already herald the French Renaissance, reflecting the royal splendor of the Loire Valley."
         },
         'nave': {
             'text': """## The Gothic Nave and Soaring Vaults
 
-Stepping inside reveals a breathtaking sense of harmony and light. The central nave reaches a height of **29 meters (95 feet)**, illuminated by expansive clerestory windows.
+Stepping inside, the dim threshold opens into a magnificent vessel of stone characterized by luminous harmony. The central nave reaches a lofty height of **29 meters (95 feet)**, drawing the visitor's gaze irresistibly toward the choir.
 
-![Spectacular perspective along the nave toward the choir](nave-1.jpg)
-![Ribbed vaults detail demonstrating Rayonnant gothic structural harmony](nave-2.jpg)
+![Majestic perspective along the central nave toward the radiant choir](nave-1.jpg)
+![Detail of the ribbed vaults and bundled colonnettes rising to the ceiling](nave-2.jpg)
 
-Constructed progressively from the 13th to 15th centuries, the nave retains structural equilibrium with its tripartite elevation: arcade, glazed triforium, and upper windows.""",
-            'narration': "You are now standing in the central nave of Saint-Gatien Cathedral. Take in the soaring verticality of the vaults rising twenty-nine meters above the stone floor. Notice how the three-tier elevation draws light into the sacred space."
+### Centuries of Masterful Construction
+Building the nave spanned more than two centuries, from the 13th through the mid-15th century. Despite this long duration, successive master builders honored the original architectural scheme, ensuring flawless continuity in the rib profiles and clustered pillars.
+
+### The Three-Tier Elevation
+Admire the equilibrium of the interior elevation: the ground floor pointed arches open onto spacious aisles; the middle level features an elegant glazed triforium that lightens the structure; and the upper clerestory windows bathe the sacred space in serene daylight. The ribbed vaulting channels structural weight down to external flying buttresses, enabling the walls to dissolve into glowing glass.""",
+            'narration': "You are now standing in the central nave of Saint-Gatien Cathedral. Allow your gaze to follow the bundled stone colonnettes upward to the ribbed vaults soaring twenty-nine meters above the floor. Notice the remarkable harmony of this vast nave, whose construction took over two hundred years. The towering arches, the delicate triforium gallery, and the expansive upper windows create a classic, luminous elevation that draws you naturally toward the choir."
         },
         'choir': {
-            'text': """## The 13th-Century Radiant Stained Glass
+            'text': """## The Radiant Choir Stained Glass (13th Century)
 
-The apse and choir ambulatory preserve one of France's most intact and luminous ensembles of **13th-century stained glass windows**.
+The apse and choir of Tours Cathedral preserve one of Western Europe's most intact and complete ensembles of **13th-century medieval stained glass**. Contemporary with the windows of Sainte-Chapelle in Paris, these upper clerestories create a breathtaking shrine of colored light.
 
-![The luminous radiant stained glass windows depicting biblical scenes and Saint Martin](choir-1.jpg)
-![Exterior view of the radiating chapels and stepped flying buttresses](choir-2.jpg)
+![The radiant stained glass windows of the choir dedicated to Christ and the saints](choir-1.jpg)
+![Exterior view of the radiating apse and stepped flying buttresses](choir-2.jpg)
 
-Contemporary with Sainte-Chapelle in Paris, these masterworks shine with vibrant ruby reds and intense cobalt blues, illustrating the life of Christ and Saint Martin of Tours.""",
-            'narration': "Walk toward the choir at the eastern end. You are gazing upon a pristine collection of thirteenth-century stained glass windows. Notice the deep cobalt blues and glowing reds, depicting biblical narratives and the legends of Saint Martin."
+### Medieval Theology of Divine Light
+In the 13th century, light passing through stained glass was revered by theologians as a physical manifestation of the divine (*lux divina*). Glassmakers in Tours used mouth-blown glass tinted in the molten pot, dominated by the legendary contrast of ruby reds and deep cobalt blues.
+
+### A Rigorous Iconographic Scheme
+The fifteen upper lancets of the choir present a carefully orchestrated program: the central axial window celebrates the Incarnation and Passion of Christ, flanked by Old Testament narratives and the heroic lives of the apostles and evangelists of early Gaul.""",
+            'narration': "Walk forward into the high choir and look up at the upper clerestory windows. You are gazing upon a priceless artistic treasure: fifteen thirteenth-century stained glass windows miraculously preserved through the centuries. Notice the brilliant ruby reds and deep cobalt blues, comparable to the famous Sainte-Chapelle in Paris. To medieval worshippers, light filtered through colored glass was seen as divine grace illuminating sacred history above the high altar."
+        },
+        'martin': {
+            'text': """## The Saint Martin Narrative Window
+
+Among the choir's 13th-century windows, the one dedicated to **Saint Martin of Tours** holds profound historical and spiritual significance for the Loire Valley and Western Christendom.
+
+![The legendary stained glass window illustrating the dramatic life of Saint Martin](martin-1.jpg)
+![Detail of a 13th-century medallion highlighting the delicate grisaille painting](martin-2.jpg)
+
+### The Graphic Novel of the Middle Ages
+Arranged in stacked geometric medallions (quatrefoils and circles), the window functioned as a vivid picture story for visiting pilgrims. Recognizable scenes include the young Roman soldier cutting his cloak in two for a beggar at the gates of Amiens, his conversion, baptism, and miraculous healings.
+
+### Commemorating the City's Patron
+Elected Bishop of Tours in 371 and founder of Ligugé and Marmoutier monasteries, Saint Martin transformed Tours into one of the preeminent pilgrimage destinations of medieval Europe. The expressive painted gestures and delicate grisaille drapery highlight the mastery of Tours' glass ateliers.""",
+            'narration': "Direct your attention to the stained glass window dedicated to Saint Martin, patron saint of Tours and apostle of Gaul. This window reads from bottom to top like an illustrated chronicle. Look for the iconic medallion where Martin, still a Roman cavalry officer, cuts his cloak in half with his sword to clothe a shivering beggar. The finely painted facial expressions and vivid ruby tones capture the life of the saint who drew pilgrims from across Europe to Tours."
+        },
+        'creation': {
+            'text': """## The Creation and Genesis Window
+
+In the heart of the radiating apse, **Bay 216** unfolds a majestic visual commentary depicting the origins of the world according to Genesis and the fulfillment of Christian salvation.
+
+![The 13th-century Creation window and its harmonious geometric medallion layout](creation-1.jpg)
+![Detail of the radiating apse clerestory windows glowing in natural daylight](creation-2.jpg)
+
+### Richly Detailed Narrative Medallions
+Each medallion in this window contains an intricate miniature world: the separation of light from darkness, the placing of heavenly bodies, the creation of animals, and Adam and Eve in the Garden. A sophisticated palette featuring ochre, warm gold, and emerald green complements the traditional royal red and blue.
+
+### Master Crafts of the 13th Century
+Crafted by assembling small fragments of mouth-blown pot metal glass joined by grooved lead cames, these windows withstand fierce weather while transmitting vibrant luminance. Robust iron armatures provide structural bracing, underscoring the Gothic framework.""",
+            'narration': "Step closer to the Creation window, one of the most captivating bays of the thirteenth-century ensemble. Through a series of delicate medallions, the master glazier depicts the Book of Genesis: primordial chaos giving way to order, the birth of stars, the creation of creatures of the earth and sea, and the dawn of humankind. Marvel at the technical brilliance of these medieval craftsmen who assembled hundreds of colored glass fragments into an enduring cosmic epic."
         },
         'tomb': {
-            'text': """## Tomb of the Children of Charles VIII
+            'text': """## Tomb of the Children of Charles VIII and Anne of Brittany
 
-Located in the south transept is an exquisite monument of the early French Renaissance: the Carrara marble tomb of Charles-Orland and Charles, sons of **King Charles VIII** and **Queen Anne of Brittany**.
+Erected in the south transept, this monument of consummate grace is universally celebrated as one of the earliest and purest masterworks of the **French Renaissance**.
 
-![The white Carrara marble monument sculpted by Michel Colombe's workshop](tomb-1.jpg)
-![Close-up of the sculpted Renaissance cherubs supporting royal armorial shields](tomb-2.jpg)
+![The splendid Carrara marble tomb sculpted by the atelier of Michel Colombe](tomb-1.jpg)
+![Detail of the Renaissance putti and delicate floral arabesques on the tomb base](tomb-2.jpg)
 
-Carved around 1506 by master sculptor **Michel Colombe** and Italian artist Girolamo Pacherot, this monument harmonizes French recumbent effigies with elegant Italianate Renaissance motifs.""",
-            'narration': "Stop before this remarkable tomb carved in white Carrara marble. Commissioned by Queen Anne of Brittany and King Charles the Eighth for their young children, it was created around fifteen hundred and six by the workshop of Michel Colombe, heralding the arrival of the Renaissance in France."
+### A Royal Memorial of Mourning
+Commissioned by Queen Anne of Brittany and King Charles VIII, this cenotaph was created to hold the remains of their young sons who died in infancy: Dauphin Charles-Orland, who passed away in 1495 at age three, and his infant brother Charles, who died in 1496 at just a few weeks old.
+
+### Michel Colombe and Girolamo Pacherot
+Completed around 1506, the work unites French master sculptor **Michel Colombe** and Italian marble carver **Girolamo Pacherot**. The children's recumbent effigies rest atop the slab in prayer, watched over by winged angels, while the base gleams with classical Italian putti, sirens, and royal coats of arms.""",
+            'narration': "Pause before this white Carrara marble monument, a pure jewel of the early French Renaissance completed around fifteen hundred and six. Commissioned by Queen Anne of Brittany and King Charles the Eighth for their young sons who died in childhood, this tomb unites medieval recumbent tradition with Italian elegance. Notice the tenderness of the two cherubs supporting the royal coats of arms, and the exquisite relief carvings crafted by the workshop of Michel Colombe and Girolamo Pacherot."
         },
         'rose': {
-            'text': """## The West Rose Window & Historic Grand Organ
+            'text': """## The West Rose Window and Historic Grand Organ
 
-Looking back toward the entrance, admire the 14th-century west rose window framed by the splendid historic **Grand Organ** case.
+Looking back toward the entrance, visitors are greeted by a breathtaking composition: the **14th-century Great Rose Window** and the sculpted oak casework of the **Grand Organ**.
 
-![The flamboyant western rose window casting colorful light upon the organ](rose-1.jpg)
-![The Renaissance carved oak case and pipes of the cathedral organ](rose-2.jpg)
+![The great western rose window casting radiant light over the organ casework](rose-1.jpg)
+![Detailed view of the Renaissance carved oak organ case and pipes](rose-2.jpg)
 
-Donated in the early 16th century by Archbishop Martin de Beaune, the intricately carved oak casework houses a renowned pipe organ celebrated for its acoustic power.""",
-            'narration': "Turning back toward the entrance, gaze up at the fourteenth-century western rose window and the grand organ. The carved oak case was donated in the sixteenth century and remains one of the finest historic instruments in the Loire Valley."
+### Rayonnant Geometry in Stone and Glass
+With its expansive diameter, the western rose displays a dazzling web of stone tracery radiating like wheel spokes into flamboyant trefoils. Unlike the deeply saturated 13th-century choir glass, this 14th-century masterpiece makes generous use of silver stain and lighter tones, flooding the nave with golden afternoon light.
+
+### A Legendary Historic Instrument
+Suspended above the western portal, the intricately carved oak organ case was donated in the early 16th century by Archbishop Martin de Beaune. Enlarged over successive centuries, this magnificent instrument features four manuals, pedals, and 56 stops, renowned internationally for its warm acoustic timbre.""",
+            'narration': "Turn back toward the western entrance and look up at the gallery. You are contemplating the magnificent fourteenth-century west rose window and the splendid historic pipe organ. Notice the radiant geometric tracery of the rose, whose lighter and golden tones illuminate the nave at sunset. Suspended below, the carved oak organ case, donated in the sixteenth century by Archbishop Martin de Beaune, houses an instrument renowned throughout Europe for its acoustic power."
+        },
+        'cloisters': {
+            'text': """## The Psalette Cloister
+
+Adjoining the northern flank of the cathedral's choir, the **Cloister of La Psalette** is a tranquil monastic precinct of extraordinary charm, designated as a French National Monument.
+
+![The vaulted stone galleries of La Psalette Cloister opening onto the serene courtyard](cloisters-1.jpg)
+![Detail of the Renaissance spiral staircase and intricate medieval ceiling bosses](cloisters-2.jpg)
+
+### The Song School and Chapter Haven
+The poetic name *Psalette* stems from the choirboys who gathered here to practice psalm singing and liturgical music during the Middle Ages. The cloister also provided a secluded sanctuary for prayer, study, and chapter meetings for the cathedral canons.
+
+### A Blend of Gothic and Renaissance Grace
+Comprising three gallery wings built between the 1440s and 1520s, the cloister captures an evocative stylistic transition. While the vaulted walkways feature expressive medieval carved bosses, the famous openwork spiral staircase and chapter library showcase graceful early Renaissance pilasters and classical medallions.""",
+            'narration': "Step now into the tranquil Cloister of La Psalette, nestled against the northern flank of the cathedral. This is where young choirboys once learned to sing the sacred psalms that gave the cloister its name. As you stroll along these vaulted galleries surrounding a peaceful garden, admire the Renaissance spiral staircase and delicately carved stonework. This serene haven provides a contemplative and inspiring conclusion to your visit of Saint-Gatien."
         }
     }
 }
 
 TRANSITIONS_DATA = {
     'fr': {
-        'facade-to-nave': "Franchissez à présent les grands portails pour pénétrer dans la fraîcheur et la majesté de la nef.",
-        'nave-to-choir': "Avancez lentement le long de la nef centrale en direction du chœur et des verrières lumineuses.",
-        'choir-to-tomb': "Dirigez-vous maintenant vers le transept sud, sur votre droite, pour découvrir le tombeau royal.",
-        'choir-to-rose': "Revenez vers l'allée centrale et retournez-vous pour contempler la grande rose occidentale.",
-        'tomb-to-rose': "Quittez le transept sud et retournez-vous vers l'entrée ouest pour admirer la rose et le grand orgue."
+        'facade-to-nave': "Franchissez maintenant les grands portails sculptés pour pénétrer dans la fraîcheur et la majesté de la nef centrale.",
+        'nave-to-choir': "Avancez lentement le long de l'allée centrale vers la lumière colorée qui irradie depuis le chœur et l'abside.",
+        'choir-to-martin': "Déplacez-vous de quelques pas sur votre gauche pour contempler de près la grande verrière dédiée à saint Martin.",
+        'choir-to-tomb': "Dirigez-vous vers le croisillon sud du transept, sur votre droite, pour vous approcher du monument de marbre royal.",
+        'choir-to-rose': "Revenez au centre de la croisée du transept et tournez-vous vers l'ouest pour contempler la grande rose.",
+        'martin-to-creation': "Poursuivez votre déambulation le long du chevet vers la verrière voisine consacrée à la Création et aux origines.",
+        'martin-to-tomb': "Traversez le chœur en direction du transept sud pour vous approcher du tombeau de marbre des enfants royaux.",
+        'creation-to-rose': "Revenez doucement vers la nef centrale et levez les yeux vers le mur occidental pour découvrir la grande rose.",
+        'tomb-to-rose': "Quittez le transept sud et avancez dans la nef vers la sortie pour admirer la rose occidentale et le grand orgue.",
+        'rose-to-cloisters': "Dirigez-vous vers le bras nord du transept pour emprunter la porte donnant sur le havre de paix du cloître de la Psalette."
     },
     'en': {
-        'facade-to-nave': "Step now through the central portals into the luminous nave of the cathedral.",
-        'nave-to-choir': "Walk slowly along the central aisle of the nave toward the radiant stained glass of the choir.",
-        'choir-to-tomb': "Turn now to the south transept on your right to discover the royal marble tomb.",
-        'choir-to-rose': "Head back along the nave and look up to admire the great western rose window above the organ.",
-        'tomb-to-rose': "Leave the south transept and face the western portal to admire the rose window and grand organ."
+        'facade-to-nave': "Step now through the monumental carved portals into the cool serenity and soaring heights of the nave.",
+        'nave-to-choir': "Walk slowly along the central aisle toward the radiant colored light glowing from the high choir and apse.",
+        'choir-to-martin': "Take a few steps to your left in the ambulatory to closely admire the legendary narrative window of Saint Martin.",
+        'choir-to-tomb': "Make your way to the south transept on your right to approach the delicate royal marble monument.",
+        'choir-to-rose': "Return to the transept crossing and turn back toward the west to take in the great rose window and organ.",
+        'martin-to-creation': "Continue around the ambulatory to the neighboring clerestory window illustrating the Creation and Genesis.",
+        'martin-to-tomb': "Cross through the choir towards the south transept to approach the royal children's marble tomb.",
+        'creation-to-rose': "Step back into the central nave and cast your eyes upward to the western wall to behold the great rose window.",
+        'tomb-to-rose': "Leave the south transept and face the western entrance to admire the rose window and the Renaissance organ case.",
+        'rose-to-cloisters': "Head toward the north transept doorway to discover the tranquil Renaissance haven of the Psalette Cloister."
     }
 }
-
-import time
 
 def download_images():
     print("Downloading and optimizing Wikimedia Commons photos...")
@@ -440,13 +701,14 @@ def download_images():
             success = False
             for attempt in range(4):
                 try:
-                    time.sleep(2.5) # Courtesy delay to respect Wikimedia API guidelines
+                    time.sleep(1.0)
                     with urllib.request.urlopen(req) as resp, open(raw_tmp, 'wb') as f:
                         f.write(resp.read())
                     
                     # Resize and optimize to 800px width with ffmpeg for lightweight mobile PWA
                     subprocess.run([
                         'ffmpeg', '-y', '-i', raw_tmp,
+                        '-frames:v', '1',
                         '-vf', 'scale=800:-1',
                         '-q:v', '3',
                         cached_file
@@ -458,7 +720,7 @@ def download_images():
                     break
                 except Exception as e:
                     print(f"  Attempt {attempt + 1} warning downloading {filename}: {e}")
-                    time.sleep(3)
+                    time.sleep(2)
             if not success:
                 print(f"  FAILED to download {filename}")
 
