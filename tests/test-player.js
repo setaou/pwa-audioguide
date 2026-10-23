@@ -212,4 +212,82 @@ assert.strictEqual(autoAdvanced, false, 'Audio player must NOT auto-advance when
   }
 }
 
+// 7. Test combined duration & transition playback
+{
+  const mockMain = new MockAudioElement();
+  mockMain.duration = 100;
+  const mockTrans = new MockAudioElement();
+  mockTrans.duration = 40;
+
+  const dualPlayer = new AudioPlayer({
+    audioElement: mockMain,
+    transitionAudioElement: mockTrans
+  });
+
+  dualPlayer.loadStep(
+    { webm: 'step-1.webm', m4a: 'step-1.m4a' },
+    { webm: 'trans-1-2.webm', m4a: 'trans-1-2.m4a' },
+    'tests/fixtures/content/fr/'
+  );
+
+  mockMain.emit('loadedmetadata');
+  mockTrans.emit('loadedmetadata');
+
+  assert.strictEqual(dualPlayer.getDuration(), 140, 'Total virtual duration must be 100 + 40 = 140');
+  assert.strictEqual(dualPlayer.mainDuration, 100);
+  assert.strictEqual(dualPlayer.transitionDuration, 40);
+
+  // Seek into transition
+  dualPlayer.seek(110);
+  assert.strictEqual(dualPlayer.getCurrentTime(), 110);
+  assert.strictEqual(mockTrans.currentTime, 10);
+  assert.strictEqual(dualPlayer.isTransitionActive, true);
+
+  // Seek back into main
+  dualPlayer.seek(50);
+  assert.strictEqual(dualPlayer.getCurrentTime(), 50);
+  assert.strictEqual(mockMain.currentTime, 50);
+  assert.strictEqual(dualPlayer.isTransitionActive, false);
+
+  // Automatic handover from main to transition on ended
+  let mainEndedEmitted = false;
+  let fullEndedEmitted = false;
+  dualPlayer.onMainAudioEnded = () => { mainEndedEmitted = true; };
+  dualPlayer.onEnded = () => { fullEndedEmitted = true; };
+
+  await dualPlayer.play();
+  mockMain.emit('ended');
+  assert.strictEqual(mainEndedEmitted, true, 'Main audio ended must trigger onMainAudioEnded');
+  assert.strictEqual(fullEndedEmitted, false, 'Main audio ended must NOT trigger onEnded when transition exists');
+  assert.strictEqual(dualPlayer.isTransitionActive, true, 'Transition must become active when main ends');
+
+  // Transition ended triggers full onEnded
+  mockTrans.emit('ended');
+  assert.strictEqual(fullEndedEmitted, true, 'Transition audio ended must trigger onEnded');
+  assert.strictEqual(dualPlayer.isPlaying(), false, 'Player must be stopped when transition ends');
+
+  // Test graceful degradation on transition error
+  const mockMain2 = new MockAudioElement();
+  mockMain2.duration = 100;
+  const mockTrans2 = new MockAudioElement();
+  mockTrans2.duration = 40;
+
+  const playerWithFaultyTrans = new AudioPlayer({
+    audioElement: mockMain2,
+    transitionAudioElement: mockTrans2
+  });
+
+  playerWithFaultyTrans.loadStep(
+    { webm: 'step-1.webm', m4a: 'step-1.m4a' },
+    { webm: 'broken.webm', m4a: 'broken.m4a' },
+    'tests/fixtures/content/fr/'
+  );
+  mockMain2.emit('loadedmetadata');
+  mockTrans2.emit('error', new Error('404 Not Found'));
+
+  assert.strictEqual(playerWithFaultyTrans.transitionDuration, 0, 'Transition duration must reset to 0 on error');
+  assert.strictEqual(playerWithFaultyTrans.getDuration(), 100, 'Total duration must degrade to main duration on error');
+  assert.strictEqual(playerWithFaultyTrans.isTransitionActive, false);
+}
+
 console.log('✓ test-player passed successfully!');
