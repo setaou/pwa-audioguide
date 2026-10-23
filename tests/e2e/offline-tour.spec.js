@@ -39,9 +39,11 @@ test.describe('Offline Tour & Service Worker Journey (Test Fixtures)', () => {
     const hasConfig = cachedFiles.some(u => u.includes('config.yml'));
     const hasMarkdown = cachedFiles.some(u => u.includes('step-1.md'));
     const hasAudio = cachedFiles.some(u => u.includes('step-1.webm') || u.includes('step-1.m4a'));
+    const hasTransitionAudio = cachedFiles.some(u => u.includes('step-2.webm') || u.includes('step-2.m4a'));
     expect(hasConfig).toBe(true);
     expect(hasMarkdown).toBe(true);
     expect(hasAudio).toBe(true);
+    expect(hasTransitionAudio).toBe(true);
 
     // 5. Cut network connection completely
     await context.setOffline(true);

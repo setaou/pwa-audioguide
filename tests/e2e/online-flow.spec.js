@@ -129,4 +129,61 @@ test.describe('Online User Journey (Test Fixtures)', () => {
     await page.click('#btn-tours-back');
     await expect(page.locator('#view-home')).toBeVisible();
   });
+
+  test('transition audio combined duration and next button pulse lifecycle', async ({ page }) => {
+    await page.goto('/index.html?config=tests/fixtures/config.yml');
+    await page.click('#btn-start-tours');
+    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+
+    await expect(page.locator('#view-step')).toBeVisible();
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
+
+    // Wait for player to load metadata for both main audio and transition
+    await page.waitForFunction(() => {
+      const p = window.audioguideApp?.player;
+      return p && p.mainDuration > 0 && p.transitionDuration > 0;
+    }, { timeout: 10000 });
+
+    const { mainDuration, transitionDuration, totalDuration } = await page.evaluate(() => {
+      const p = window.audioguideApp.player;
+      return {
+        mainDuration: p.mainDuration,
+        transitionDuration: p.transitionDuration,
+        totalDuration: p.getDuration()
+      };
+    });
+
+    expect(mainDuration).toBeGreaterThan(0);
+    expect(transitionDuration).toBeGreaterThan(0);
+    expect(totalDuration).toBeCloseTo(mainDuration + transitionDuration, 1);
+
+    const nextBtn = page.locator('#player-btn-next-step');
+
+    // Before main duration: Next button should NOT have pulse class
+    await page.evaluate(() => window.audioguideApp.player.seek(1));
+    await expect(nextBtn).not.toHaveClass(/btn-next-pulse/);
+
+    // Seek into transition phase (currentTime >= mainDuration)
+    await page.evaluate((target) => window.audioguideApp.player.seek(target), mainDuration + 0.5);
+
+    // Next button must receive the gentle pulse class
+    await expect(nextBtn).toHaveClass(/btn-next-pulse/);
+
+    // Rewind back into main audio: pulse must disappear
+    await page.evaluate(() => window.audioguideApp.player.seek(2));
+    await expect(nextBtn).not.toHaveClass(/btn-next-pulse/);
+
+    // Navigate to Step 2 (last step of tour-1)
+    await nextBtn.click();
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 2');
+
+    // On last step of tour: no transition audio, next button disabled, no pulse
+    await expect(nextBtn).toBeDisabled();
+    await expect(nextBtn).not.toHaveClass(/btn-next-pulse/);
+    const step2HasTransition = await page.evaluate(() => {
+      const p = window.audioguideApp.player;
+      return p.transitionDuration > 0;
+    });
+    expect(step2HasTransition).toBe(false);
+  });
 });
