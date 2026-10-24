@@ -18,13 +18,16 @@ test.describe('Offline Tour & Service Worker Journey (Test Fixtures)', () => {
     await page.click('#btn-start-tours');
     await expect(page.locator('#view-tours')).toBeVisible();
 
-    // 4. Trigger tour preloading
-    const preloadBtn = page.locator('#btn-preload-tour-1');
+    // 4. Open tour action sheet and trigger tour preloading
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+
+    const preloadBtn = page.locator('#btn-tour-download');
     await expect(preloadBtn).toBeVisible();
     await preloadBtn.click();
 
     // Wait for preloader to finish caching all tour assets
-    const preloadStatus = page.locator('#preload-status-tour-1');
+    const preloadStatus = page.locator('#tour-download-status');
     await expect(preloadStatus).toHaveText('Prêt hors-ligne', { timeout: 15000 });
     await expect(preloadBtn).toContainText('Prêt hors-ligne');
 
@@ -49,7 +52,7 @@ test.describe('Offline Tour & Service Worker Journey (Test Fixtures)', () => {
     await context.setOffline(true);
 
     // 6. Enter the tour while offline
-    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+    await page.click('#btn-tour-start');
     await expect(page.locator('#view-step')).toBeVisible();
     await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
 

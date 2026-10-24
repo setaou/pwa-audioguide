@@ -107,7 +107,12 @@ test.describe('Online User Journey (Test Fixtures)', () => {
     // Select fixture tour
     const tourCard = page.locator('.tour-card[data-tour-id="tour-1"]');
     await expect(tourCard).toBeVisible();
-    await tourCard.locator('.tour-card-title').click();
+    await tourCard.click();
+
+    // Action bottom sheet is displayed
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+    await expect(page.locator('#tour-sheet-title')).toHaveText('Circuit Test 1');
+    await page.click('#btn-tour-start');
 
     // View step is displayed with fixture Step 1
     await expect(page.locator('#view-step')).toBeVisible();
@@ -129,7 +134,9 @@ test.describe('Online User Journey (Test Fixtures)', () => {
   test('audio player playback, seeking, and pause', async ({ page }) => {
     await page.goto('/index.html?config=tests/fixtures/config.yml');
     await page.click('#btn-start-tours');
-    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+    await page.click('#btn-tour-start');
 
     await expect(page.locator('#view-step')).toBeVisible();
     const playerBar = page.locator('#audio-player-bar');
@@ -175,7 +182,9 @@ test.describe('Online User Journey (Test Fixtures)', () => {
   test('step navigation via buttons and dropdown selector', async ({ page }) => {
     await page.goto('/index.html?config=tests/fixtures/config.yml');
     await page.click('#btn-start-tours');
-    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+    await page.click('#btn-tour-start');
 
     await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
 
@@ -200,7 +209,9 @@ test.describe('Online User Journey (Test Fixtures)', () => {
   test('transition audio combined duration and next button pulse lifecycle', async ({ page }) => {
     await page.goto('/index.html?config=tests/fixtures/config.yml');
     await page.click('#btn-start-tours');
-    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+    await page.click('#btn-tour-start');
 
     await expect(page.locator('#view-step')).toBeVisible();
     await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
@@ -282,7 +293,9 @@ test.describe('Online User Journey (Test Fixtures)', () => {
     expect(page.url()).toContain('#/tours');
 
     // 2. Select tour-1 (loads step-1)
-    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+    await page.click('#btn-tour-start');
     await expect(page.locator('#view-step')).toBeVisible();
     await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
     expect(page.url()).toContain('#/tour/tour-1/step-1');
