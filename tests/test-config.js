@@ -92,7 +92,9 @@ function verifyLanguageConfig(langPath, langCode) {
     'settings_autoplay',
     'settings_autoplay_desc',
     'settings_clear_cache',
-    'settings_close'
+    'settings_close',
+    'start_tour',
+    'tour_sheet_close'
   ];
 
   for (const k of requiredUiKeys) {

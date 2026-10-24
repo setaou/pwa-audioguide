@@ -40,6 +40,8 @@ ui:
   settings_autoplay_desc: "Lance l'audio automatiquement à chaque étape"
   settings_clear_cache: "Purger le cache et recharger"
   settings_close: "Fermer"
+  start_tour: "Démarrer le parcours"
+  tour_sheet_close: "Fermer"
 
 steps:
   - id: "step-1"

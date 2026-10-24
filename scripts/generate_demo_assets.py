@@ -79,6 +79,8 @@ ui:
   settings_autoplay_desc: "Lance l'audio automatiquement à chaque étape"
   settings_clear_cache: "Purger le cache et recharger"
   settings_close: "Fermer"
+  start_tour: "Démarrer le parcours"
+  tour_sheet_close: "Fermer"
 
 tours:
   - id: "express"
@@ -262,6 +264,8 @@ ui:
   settings_autoplay_desc: "Starts audio automatically on each step"
   settings_clear_cache: "Clear cache and reload"
   settings_close: "Close"
+  start_tour: "Start tour"
+  tour_sheet_close: "Close"
 
 tours:
   - id: "express"

@@ -112,6 +112,8 @@ ui:
   offline_download: "Télécharger pour écoute hors-ligne"
   downloading: "Téléchargement {percent}%..."
   offline_ready: "✓ Disponible hors-ligne"
+  start_tour: "Démarrer le parcours"
+  tour_sheet_close: "Fermer"
   steps_count: "{count} étapes"
 
   # Écran d'étape & Navigation
