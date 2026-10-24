@@ -186,4 +186,70 @@ test.describe('Online User Journey (Test Fixtures)', () => {
     });
     expect(step2HasTransition).toBe(false);
   });
+
+  test('hash routing supports deep linking to a specific step', async ({ page }) => {
+    // Navigate directly to step 2 of tour-1 via cold load URL
+    await page.goto('/index.html?config=tests/fixtures/config.yml#/tour/tour-1/step-2');
+
+    // Step view must be displayed immediately with step 2 content
+    await expect(page.locator('#view-step')).toBeVisible();
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 2');
+    await expect(page.locator('#step-indicator-badge')).toHaveText('Étape 2 sur 2');
+
+    // Player bar is active and visible
+    await expect(page.locator('#audio-player-bar')).toBeVisible();
+
+    // Next button is disabled since it's the last step
+    await expect(page.locator('#player-btn-next-step')).toBeDisabled();
+    // Previous button is enabled
+    await expect(page.locator('#player-btn-prev-step')).toBeEnabled();
+  });
+
+  test('browser back and forward buttons navigate history', async ({ page }) => {
+    await page.goto('/index.html?config=tests/fixtures/config.yml');
+    await expect(page.locator('#view-home')).toBeVisible();
+
+    // 1. Navigate to tours
+    await page.click('#btn-start-tours');
+    await expect(page.locator('#view-tours')).toBeVisible();
+    expect(page.url()).toContain('#/tours');
+
+    // 2. Select tour-1 (loads step-1)
+    await page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-title').click();
+    await expect(page.locator('#view-step')).toBeVisible();
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
+    expect(page.url()).toContain('#/tour/tour-1/step-1');
+
+    // 3. Advance to step-2
+    await page.click('#player-btn-next-step');
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 2');
+    expect(page.url()).toContain('#/tour/tour-1/step-2');
+
+    // 4. Browser BACK -> should return to step-1
+    await page.goBack();
+    await expect(page.locator('#view-step')).toBeVisible();
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
+    expect(page.url()).toContain('#/tour/tour-1/step-1');
+
+    // 5. Browser BACK -> should return to tours list
+    await page.goBack();
+    await expect(page.locator('#view-tours')).toBeVisible();
+    await expect(page.locator('#audio-player-bar')).toBeHidden();
+    expect(page.url()).toContain('#/tours');
+
+    // 6. Browser BACK -> should return to home
+    await page.goBack();
+    await expect(page.locator('#view-home')).toBeVisible();
+
+    // 7. Browser FORWARD -> should return to tours list
+    await page.goForward();
+    await expect(page.locator('#view-tours')).toBeVisible();
+    expect(page.url()).toContain('#/tours');
+
+    // 8. Browser FORWARD -> should return to step-1
+    await page.goForward();
+    await expect(page.locator('#view-step')).toBeVisible();
+    await expect(page.locator('#step-heading')).toHaveText('Étape Fictive 1');
+    expect(page.url()).toContain('#/tour/tour-1/step-1');
+  });
 });

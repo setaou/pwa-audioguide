@@ -366,4 +366,48 @@ const devApp = new AudioguideApp({ isDevMode: true });
 assert.strictEqual(devApp.isDevMode, true, 'App should recognize isDevMode flag');
 assert.strictEqual(devApp.player.isDevMode, true, 'AudioPlayer should inherit isDevMode from AudioguideApp');
 
+// 12. Test Hash Router parsing
+assert.strictEqual(typeof app.parseHash, 'function', 'app.parseHash should be a function');
+assert.deepStrictEqual(app.parseHash(''), { view: 'home' });
+assert.deepStrictEqual(app.parseHash('#'), { view: 'home' });
+assert.deepStrictEqual(app.parseHash('#/'), { view: 'home' });
+assert.deepStrictEqual(app.parseHash('#/tours'), { view: 'tours' });
+assert.deepStrictEqual(app.parseHash('#/tours/'), { view: 'tours' });
+assert.deepStrictEqual(app.parseHash('#/tour/tour-1/step-2'), { view: 'step', tourId: 'tour-1', stepId: 'step-2' });
+assert.deepStrictEqual(app.parseHash('#/tour/tour-1/step-2/'), { view: 'step', tourId: 'tour-1', stepId: 'step-2' });
+assert.deepStrictEqual(app.parseHash('#/tour/%E0%A4%A/step-1'), { view: 'home' });
+assert.deepStrictEqual(app.parseHash('#/unknown'), { view: 'home' });
+
+// 13. Test Route Handling and Fallbacks
+app.langConfig = {
+  tours: [
+    { id: 'tour-1', title: 'Tour 1', steps: ['step-1', 'step-2'] }
+  ],
+  steps: [
+    { id: 'step-1', title: 'Step 1' },
+    { id: 'step-2', title: 'Step 2' }
+  ]
+};
+
+await app.setRoute('#/tours');
+assert.strictEqual(app.currentView, 'tours', 'Routing to #/tours should set currentView to tours');
+
+await app.setRoute('#/tour/tour-1/step-2');
+assert.strictEqual(app.currentView, 'step', 'Routing to #/tour/tour-1/step-2 should set currentView to step');
+assert.strictEqual(app.currentTour?.id, 'tour-1', 'currentTour should be tour-1');
+assert.strictEqual(app.currentStepIndex, 1, 'currentStepIndex should be 1');
+
+// Test invalid tour fallback
+await app.setRoute('#/tour/non-existent-tour/step-1');
+assert.strictEqual(app.currentView, 'tours', 'Invalid tourId should fallback to tours view');
+
+// Test invalid step fallback (should fallback to step 0 of valid tour)
+await app.setRoute('#/tour/tour-1/non-existent-step');
+assert.strictEqual(app.currentView, 'step', 'Invalid step in valid tour should load first step');
+assert.strictEqual(app.currentStepIndex, 0, 'Invalid step in valid tour should set currentStepIndex to 0');
+
+// Test navigation back to home
+await app.setRoute('#/');
+assert.strictEqual(app.currentView, 'home', 'Routing to #/ should set currentView to home');
+
 console.log('✓ test-app-flow passed successfully!');

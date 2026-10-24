@@ -101,8 +101,10 @@ export class AudioguideApp {
     await this.loadLanguageConfig(this.currentLanguage);
     this.setupUIBindings();
     this.applyLocalizedUI();
-    this.renderHome();
-    this.navigateTo('home');
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('hashchange', () => this.handleRoute());
+    }
+    await this.handleRoute();
   }
 
   async loadYaml(url) {
@@ -184,8 +186,7 @@ export class AudioguideApp {
     const btnStartTours = document.getElementById('btn-start-tours');
     if (btnStartTours) {
       btnStartTours.addEventListener('click', () => {
-        this.renderTours();
-        this.navigateTo('tours');
+        this.setRoute('#/tours');
       });
     }
 
@@ -193,7 +194,7 @@ export class AudioguideApp {
     if (btnToursBack) {
       btnToursBack.innerHTML = getIcon('chevron-left');
       btnToursBack.addEventListener('click', () => {
-        this.navigateTo('home');
+        this.setRoute('#/');
       });
     }
 
@@ -201,9 +202,7 @@ export class AudioguideApp {
     if (btnStepBackTours) {
       btnStepBackTours.innerHTML = getIcon('chevron-left');
       btnStepBackTours.addEventListener('click', () => {
-        this.player.pause();
-        this.renderTours();
-        this.navigateTo('tours');
+        this.setRoute('#/tours');
       });
     }
 
@@ -212,7 +211,12 @@ export class AudioguideApp {
     if (stepSelect) {
       stepSelect.addEventListener('change', (e) => {
         const stepIndex = parseInt(e.target.value, 10);
-        this.loadStepByIndex(stepIndex);
+        if (this.currentTour && this.currentTour.steps && this.currentTour.steps[stepIndex]) {
+          const stepId = this.currentTour.steps[stepIndex];
+          this.setRoute(`#/tour/${this.currentTour.id}/${stepId}`);
+        } else {
+          this.loadStepByIndex(stepIndex);
+        }
       });
     }
 
@@ -240,8 +244,9 @@ export class AudioguideApp {
       const iconPrev = document.getElementById('player-icon-prev');
       if (iconPrev) iconPrev.innerHTML = getIcon('step-prev');
       btnPrevStep.addEventListener('click', () => {
-        if (this.currentStepIndex > 0) {
-          this.loadStepByIndex(this.currentStepIndex - 1);
+        if (this.currentTour && this.currentTour.steps && this.currentStepIndex > 0) {
+          const prevStepId = this.currentTour.steps[this.currentStepIndex - 1];
+          this.setRoute(`#/tour/${this.currentTour.id}/${prevStepId}`);
         }
       });
     }
@@ -251,8 +256,9 @@ export class AudioguideApp {
       const iconNext = document.getElementById('player-icon-next');
       if (iconNext) iconNext.innerHTML = getIcon('step-next');
       btnNextStep.addEventListener('click', () => {
-        if (this.currentTour && this.currentStepIndex < this.currentTour.steps.length - 1) {
-          this.loadStepByIndex(this.currentStepIndex + 1);
+        if (this.currentTour && this.currentTour.steps && this.currentStepIndex < this.currentTour.steps.length - 1) {
+          const nextStepId = this.currentTour.steps[this.currentStepIndex + 1];
+          this.setRoute(`#/tour/${this.currentTour.id}/${nextStepId}`);
         }
       });
     }
@@ -433,7 +439,7 @@ export class AudioguideApp {
   navigateTo(viewName) {
     this.currentView = viewName;
     if (viewName !== 'step') {
-      if (this.player) {
+      if (this.player && typeof this.player.pause === 'function') {
         this.player.pause();
       }
       const nextBtn = typeof document !== 'undefined' ? document.getElementById('player-btn-next-step') : null;
@@ -455,6 +461,97 @@ export class AudioguideApp {
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  parseHash(hash = '') {
+    try {
+      const raw = String(hash || '').replace(/^#\/?/, '').replace(/\/+$/, '').trim();
+      if (!raw) {
+        return { view: 'home' };
+      }
+      const parts = raw.split('/').filter(Boolean);
+      if (parts.length === 1 && parts[0] === 'tours') {
+        return { view: 'tours' };
+      }
+      if (parts.length >= 3 && parts[0] === 'tour') {
+        return {
+          view: 'step',
+          tourId: decodeURIComponent(parts[1]),
+          stepId: decodeURIComponent(parts[2])
+        };
+      }
+      return { view: 'home' };
+    } catch (_) {
+      return { view: 'home' };
+    }
+  }
+
+  setRoute(hashPath) {
+    const targetHash = hashPath.startsWith('#') ? hashPath : `#${hashPath}`;
+    if (typeof window !== 'undefined' && typeof window.location !== 'undefined') {
+      if (window.location.hash !== targetHash) {
+        window.location.hash = targetHash;
+      } else {
+        this.handleRoute();
+      }
+    } else {
+      this._mockHash = targetHash;
+      return this.handleRoute();
+    }
+  }
+
+  async handleRoute() {
+    let currentHash = '';
+    if (typeof window !== 'undefined' && typeof window.location !== 'undefined') {
+      currentHash = window.location.hash || '';
+    } else if (this._mockHash !== undefined && this._mockHash !== null) {
+      currentHash = this._mockHash;
+    }
+
+    const route = this.parseHash(currentHash);
+
+    if (route.view === 'home') {
+      this.renderHome();
+      this.navigateTo('home');
+      return;
+    }
+
+    if (route.view === 'tours') {
+      this.renderTours();
+      this.navigateTo('tours');
+      return;
+    }
+
+    if (route.view === 'step') {
+      const tours = this.langConfig?.tours || [];
+      const tour = tours.find(t => t.id === route.tourId) || (this.currentTour?.id === route.tourId ? this.currentTour : null);
+      if (!tour) {
+        console.warn(`Tour not found: ${route.tourId}`);
+        this.setRoute('#/tours');
+        return;
+      }
+
+      const stepIds = tour.steps || [];
+      let stepIndex = stepIds.indexOf(route.stepId);
+      if (stepIndex === -1) {
+        console.warn(`Step not found in tour ${route.tourId}: ${route.stepId}`);
+        if (stepIds.length > 0) {
+          this.setRoute(`#/tour/${route.tourId}/${stepIds[0]}`);
+          return;
+        } else {
+          this.setRoute('#/tours');
+          return;
+        }
+      }
+
+      this.currentTour = tour;
+      this.navigateTo('step');
+      await this.loadStepByIndex(stepIndex);
+      return;
+    }
+
+    this.renderHome();
+    this.navigateTo('home');
   }
 
   renderHome() {
@@ -556,9 +653,14 @@ export class AudioguideApp {
 
   selectTour(tour) {
     this.currentTour = tour;
-    this.currentStepIndex = 0;
-    this.navigateTo('step');
-    this.loadStepByIndex(0);
+    const firstStepId = (tour.steps && tour.steps.length > 0) ? tour.steps[0] : '';
+    if (firstStepId) {
+      this.setRoute(`#/tour/${tour.id}/${firstStepId}`);
+    } else {
+      this.currentStepIndex = 0;
+      this.navigateTo('step');
+      this.loadStepByIndex(0);
+    }
   }
 
   async loadStepByIndex(index) {
@@ -566,7 +668,7 @@ export class AudioguideApp {
     const stepIds = this.currentTour.steps || [];
     if (index < 0 || index >= stepIds.length) return;
 
-    if (this.player) {
+    if (this.player && typeof this.player.pause === 'function') {
       this.player.pause();
     }
 
@@ -591,10 +693,12 @@ export class AudioguideApp {
 
     // Load Audio in Player and start playback immediately upon step arrival
     if (this.player) {
-      if (step.audio) {
+      if (step.audio && typeof this.player.loadStep === 'function') {
         this.player.loadStep(step.audio, transitionConfig, basePath);
-        this.player.play();
-      } else {
+        if (typeof this.player.play === 'function') {
+          this.player.play();
+        }
+      } else if (typeof this.player.loadStep === 'function') {
         this.player.loadStep(null);
       }
     }
