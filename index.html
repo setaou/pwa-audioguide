@@ -128,6 +128,50 @@
       </div>
     </footer>
 
+    <!-- Discreet Settings Gear Button (Home View) -->
+    <button id="btn-settings-open" class="home-settings-btn" aria-label="Paramètres">
+      <!-- Injected via getIcon('settings') -->
+    </button>
+
+    <!-- Settings Overlay & Bottom Sheet -->
+    <div id="settings-overlay" class="settings-overlay" aria-hidden="true"></div>
+    <div id="settings-sheet" class="settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
+      <div class="settings-sheet-handle"></div>
+      <div class="settings-sheet-header">
+        <h3 id="settings-title" class="settings-sheet-title"></h3>
+        <button id="btn-settings-close" class="settings-close-btn" aria-label="Fermer">✕</button>
+      </div>
+      <div class="settings-sheet-content">
+        <div class="settings-option-row">
+          <div class="settings-option-text">
+            <label for="toggle-dev-mode" id="lbl-dev-mode" class="settings-option-label"></label>
+            <p id="desc-dev-mode" class="settings-option-desc"></p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-dev-mode" class="toggle-checkbox">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-option-row">
+          <div class="settings-option-text">
+            <label for="toggle-autoplay" id="lbl-autoplay" class="settings-option-label"></label>
+            <p id="desc-autoplay" class="settings-option-desc"></p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-autoplay" class="toggle-checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-action-row">
+          <button id="btn-clear-cache" class="settings-clear-cache-btn">
+            <span id="txt-clear-cache"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Vendors -->
@@ -137,8 +181,13 @@
   <!-- Application Bootstrap -->
   <script type="module">
     import { AudioguideApp } from './js/app.js';
-    const isDev = typeof window !== 'undefined' && typeof window.location !== 'undefined'
-      && new URLSearchParams(window.location.search).get('dev') === '1';
+    let storedDev = false;
+    try {
+      storedDev = typeof localStorage !== 'undefined' && localStorage.getItem('audioguide_dev_mode') === 'true';
+    } catch (_) {}
+    const isDev = (typeof window !== 'undefined' && typeof window.location !== 'undefined'
+      && new URLSearchParams(window.location.search).get('dev') === '1')
+      || storedDev;
     const configPath = typeof window !== 'undefined' && typeof window.location !== 'undefined'
       ? new URLSearchParams(window.location.search).get('config') || 'config.yml'
       : 'config.yml';

@@ -19,9 +19,12 @@ export class AudioguideApp {
     this.contentDir = options.contentDir || null;
     this.isDevMode = options.isDevMode !== undefined
       ? Boolean(options.isDevMode)
-      : (typeof window !== 'undefined' && typeof window.location !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('dev') === '1'
-          : false);
+      : ((typeof window !== 'undefined' && typeof window.location !== 'undefined'
+          && new URLSearchParams(window.location.search).get('dev') === '1')
+        || this.getSavedDevMode());
+    this.isAutoplay = options.isAutoplay !== undefined
+      ? Boolean(options.isAutoplay)
+      : this.getSavedAutoplay();
 
     this.currentView = 'home';
     this.currentLanguage = this.getSavedLanguage() || 'fr';
@@ -44,15 +47,123 @@ export class AudioguideApp {
   }
 
   getSavedLanguage() {
-    return (this.storage && typeof this.storage.getItem === 'function')
-      ? this.storage.getItem('audioguide_lang')
-      : null;
+    try {
+      return (this.storage && typeof this.storage.getItem === 'function')
+        ? this.storage.getItem('audioguide_lang')
+        : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   setLanguage(langCode) {
     this.currentLanguage = langCode;
-    if (this.storage && typeof this.storage.setItem === 'function') {
-      this.storage.setItem('audioguide_lang', langCode);
+    try {
+      if (this.storage && typeof this.storage.setItem === 'function') {
+        this.storage.setItem('audioguide_lang', langCode);
+      }
+    } catch (_) {}
+  }
+
+  getSavedDevMode() {
+    try {
+      return (this.storage && typeof this.storage.getItem === 'function')
+        ? this.storage.getItem('audioguide_dev_mode') === 'true'
+        : false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  getSavedAutoplay() {
+    try {
+      if (this.storage && typeof this.storage.getItem === 'function') {
+        const val = this.storage.getItem('audioguide_autoplay');
+        if (val !== null) return val !== 'false';
+      }
+    } catch (_) {}
+    return true;
+  }
+
+  setDevMode(enabled) {
+    this.isDevMode = Boolean(enabled);
+    if (this.player) {
+      this.player.isDevMode = this.isDevMode;
+    }
+    try {
+      if (this.storage && typeof this.storage.setItem === 'function') {
+        this.storage.setItem('audioguide_dev_mode', String(this.isDevMode));
+      }
+    } catch (_) {}
+  }
+
+  setAutoplay(enabled) {
+    this.isAutoplay = Boolean(enabled);
+    try {
+      if (this.storage && typeof this.storage.setItem === 'function') {
+        this.storage.setItem('audioguide_autoplay', String(this.isAutoplay));
+      }
+    } catch (_) {}
+  }
+
+  openSettings() {
+    if (typeof document === 'undefined') return;
+    const overlay = document.getElementById('settings-overlay');
+    const sheet = document.getElementById('settings-sheet');
+    const devToggle = document.getElementById('toggle-dev-mode');
+    const autoplayToggle = document.getElementById('toggle-autoplay');
+
+    if (devToggle) devToggle.checked = this.isDevMode;
+    if (autoplayToggle) autoplayToggle.checked = this.isAutoplay;
+
+    if (overlay) {
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    if (sheet) {
+      sheet.classList.add('active');
+      sheet.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  closeSettings() {
+    if (typeof document === 'undefined') return;
+    const overlay = document.getElementById('settings-overlay');
+    const sheet = document.getElementById('settings-sheet');
+
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+    if (sheet) {
+      sheet.classList.remove('active');
+      sheet.setAttribute('aria-hidden', 'true');
+    }
+    const btnOpen = document.getElementById('btn-settings-open');
+    if (btnOpen && typeof btnOpen.focus === 'function') {
+      btnOpen.focus();
+    }
+  }
+
+  async clearCacheAndReload() {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) {
+          await reg.unregister();
+        }
+      } catch (_) {}
+    }
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      try {
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+      } catch (_) {}
+    }
+    if (typeof window !== 'undefined' && window.location && typeof window.location.reload === 'function') {
+      window.location.reload();
     }
   }
 
@@ -187,6 +298,61 @@ export class AudioguideApp {
     if (btnStartTours) {
       btnStartTours.addEventListener('click', () => {
         this.setRoute('#/tours');
+      });
+    }
+
+    // Settings Bottom Sheet Bindings
+    const btnSettingsOpen = document.getElementById('btn-settings-open');
+    if (btnSettingsOpen) {
+      btnSettingsOpen.innerHTML = getIcon('settings');
+      btnSettingsOpen.addEventListener('click', () => {
+        this.openSettings();
+      });
+    }
+
+    const btnSettingsClose = document.getElementById('btn-settings-close');
+    if (btnSettingsClose) {
+      btnSettingsClose.addEventListener('click', () => {
+        this.closeSettings();
+      });
+    }
+
+    const settingsOverlay = document.getElementById('settings-overlay');
+    if (settingsOverlay) {
+      settingsOverlay.addEventListener('click', () => {
+        this.closeSettings();
+      });
+    }
+
+    const toggleDevMode = document.getElementById('toggle-dev-mode');
+    if (toggleDevMode) {
+      toggleDevMode.addEventListener('change', (e) => {
+        this.setDevMode(e.target.checked);
+      });
+    }
+
+    const toggleAutoplay = document.getElementById('toggle-autoplay');
+    if (toggleAutoplay) {
+      toggleAutoplay.addEventListener('change', (e) => {
+        this.setAutoplay(e.target.checked);
+      });
+    }
+
+    const btnClearCache = document.getElementById('btn-clear-cache');
+    if (btnClearCache) {
+      btnClearCache.addEventListener('click', () => {
+        this.clearCacheAndReload();
+      });
+    }
+
+    if (typeof document.addEventListener === 'function') {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const sheet = document.getElementById('settings-sheet');
+          if (sheet && sheet.classList.contains('active')) {
+            this.closeSettings();
+          }
+        }
       });
     }
 
@@ -383,6 +549,34 @@ export class AudioguideApp {
     const tipText = document.getElementById('home-offline-tip');
     if (tipText) tipText.textContent = this.t('headphonesTipText');
 
+    // Settings sheet and button localized strings
+    const btnSettingsOpen = document.getElementById('btn-settings-open');
+    if (btnSettingsOpen) {
+      btnSettingsOpen.setAttribute('aria-label', this.t('settingsBtnTitle') || this.t('settingsTitle'));
+      btnSettingsOpen.setAttribute('title', this.t('settingsBtnTitle') || this.t('settingsTitle'));
+    }
+
+    const settingsTitle = document.getElementById('settings-title');
+    if (settingsTitle) settingsTitle.textContent = this.t('settingsTitle');
+
+    const btnSettingsClose = document.getElementById('btn-settings-close');
+    if (btnSettingsClose) btnSettingsClose.setAttribute('aria-label', this.t('settingsClose'));
+
+    const lblDevMode = document.getElementById('lbl-dev-mode');
+    if (lblDevMode) lblDevMode.textContent = this.t('settingsDevMode');
+
+    const descDevMode = document.getElementById('desc-dev-mode');
+    if (descDevMode) descDevMode.textContent = this.t('settingsDevModeDesc');
+
+    const lblAutoplay = document.getElementById('lbl-autoplay');
+    if (lblAutoplay) lblAutoplay.textContent = this.t('settingsAutoplay');
+
+    const descAutoplay = document.getElementById('desc-autoplay');
+    if (descAutoplay) descAutoplay.textContent = this.t('settingsAutoplayDesc');
+
+    const txtClearCache = document.getElementById('txt-clear-cache');
+    if (txtClearCache) txtClearCache.textContent = this.t('settingsClearCache');
+
     // Navigation buttons aria-labels
     const btnToursBack = document.getElementById('btn-tours-back');
     if (btnToursBack) btnToursBack.setAttribute('aria-label', this.t('backToHome'));
@@ -458,6 +652,11 @@ export class AudioguideApp {
     const playerBar = document.getElementById('audio-player-bar');
     if (playerBar) {
       playerBar.style.display = viewName === 'step' ? 'flex' : 'none';
+    }
+
+    const settingsBtn = document.getElementById('btn-settings-open');
+    if (settingsBtn) {
+      settingsBtn.style.display = viewName === 'home' ? 'flex' : 'none';
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -691,11 +890,11 @@ export class AudioguideApp {
       }
     }
 
-    // Load Audio in Player and start playback immediately upon step arrival
+    // Load Audio in Player and conditionally start playback upon step arrival
     if (this.player) {
       if (step.audio && typeof this.player.loadStep === 'function') {
         this.player.loadStep(step.audio, transitionConfig, basePath);
-        if (typeof this.player.play === 'function') {
+        if (this.isAutoplay && typeof this.player.play === 'function') {
           this.player.play();
         }
       } else if (typeof this.player.loadStep === 'function') {

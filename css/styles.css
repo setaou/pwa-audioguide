@@ -706,3 +706,247 @@ body {
 .player-play-btn:active {
   transform: scale(0.94);
 }
+
+/* ==========================================================================
+   Settings Bottom Sheet & Controls
+   ========================================================================== */
+
+.home-settings-btn {
+  display: none;
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  right: max(20px, calc(50% - 260px + 20px));
+  z-index: 90;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(19, 29, 47, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
+}
+
+#view-home.active ~ #btn-settings-open {
+  display: flex;
+}
+
+.home-settings-btn:hover,
+.home-settings-btn:focus-visible {
+  background: rgba(30, 41, 59, 0.95);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+  transform: scale(1.06);
+}
+
+.home-settings-btn:active {
+  transform: scale(0.94);
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.settings-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.settings-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 100%);
+  width: 100%;
+  max-width: 520px;
+  background-color: var(--bg-card);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  padding: 16px 20px 32px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+  box-sizing: border-box;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.settings-sheet.active {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.settings-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border-subtle);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.settings-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-sheet-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.settings-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.settings-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.settings-sheet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-option-text {
+  flex: 1;
+}
+
+.settings-option-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.settings-option-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Switch toggle styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 34px;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-slider::before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+}
+
+input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Clear cache button */
+.settings-action-row {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-clear-cache-btn {
+  width: 100%;
+  min-height: 44px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 10px 16px;
+}
+
+.settings-clear-cache-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fee2e2;
+}
+
+.settings-clear-cache-btn:active {
+  transform: scale(0.98);
+}
+

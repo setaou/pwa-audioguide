@@ -71,6 +71,14 @@ ui:
   prev_image: "Image précédente"
   next_image: "Image suivante"
   carousel_slide: "Image {0}"
+  settings_btn_title: "Paramètres"
+  settings_title: "Paramètres"
+  settings_dev_mode: "Mode développeur"
+  settings_dev_mode_desc: "Contourne le Service Worker et les caches"
+  settings_autoplay: "Lecture automatique"
+  settings_autoplay_desc: "Lance l'audio automatiquement à chaque étape"
+  settings_clear_cache: "Purger le cache et recharger"
+  settings_close: "Fermer"
 
 tours:
   - id: "express"
@@ -246,6 +254,14 @@ ui:
   prev_image: "Previous image"
   next_image: "Next image"
   carousel_slide: "Slide {0}"
+  settings_btn_title: "Settings"
+  settings_title: "Settings"
+  settings_dev_mode: "Developer Mode"
+  settings_dev_mode_desc: "Bypasses Service Worker and caches"
+  settings_autoplay: "Autoplay"
+  settings_autoplay_desc: "Starts audio automatically on each step"
+  settings_clear_cache: "Clear cache and reload"
+  settings_close: "Close"
 
 tours:
   - id: "express"

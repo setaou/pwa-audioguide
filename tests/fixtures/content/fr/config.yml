@@ -32,6 +32,14 @@ ui:
   prev_image: "Photo précédente"
   next_image: "Photo suivante"
   carousel_slide: "Photo {current} sur {total}"
+  settings_btn_title: "Paramètres"
+  settings_title: "Paramètres"
+  settings_dev_mode: "Mode développeur"
+  settings_dev_mode_desc: "Contourne le Service Worker et les caches"
+  settings_autoplay: "Lecture automatique"
+  settings_autoplay_desc: "Lance l'audio automatiquement à chaque étape"
+  settings_clear_cache: "Purger le cache et recharger"
+  settings_close: "Fermer"
 
 steps:
   - id: "step-1"

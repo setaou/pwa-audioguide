@@ -30,6 +30,73 @@ test.describe('Online User Journey (Test Fixtures)', () => {
     await expect(page.locator('#txt-start-tours')).toHaveText('Démarrer les parcours');
   });
 
+  test('settings bottom sheet opens, toggles settings, and updates localization', async ({ page }) => {
+    await page.goto('/index.html?config=tests/fixtures/config.yml');
+    await expect(page.locator('#view-home')).toBeVisible();
+
+    const openBtn = page.locator('#btn-settings-open');
+    const sheet = page.locator('#settings-sheet');
+    const overlay = page.locator('#settings-overlay');
+    const closeBtn = page.locator('#btn-settings-close');
+    const toggleAutoplay = page.locator('#toggle-autoplay');
+
+    // Initially sheet should not have active class
+    await expect(sheet).not.toHaveClass(/active/);
+
+    // Open settings
+    await openBtn.click();
+    await expect(sheet).toHaveClass(/active/);
+    await expect(overlay).toHaveClass(/active/);
+
+    // Check default labels in French
+    await expect(page.locator('#settings-title')).toHaveText('Paramètres');
+    await expect(page.locator('#lbl-autoplay')).toHaveText('Lecture automatique');
+
+    // Autoplay should be checked by default
+    await expect(toggleAutoplay).toBeChecked();
+
+    // Toggle autoplay off
+    await toggleAutoplay.click();
+    await expect(toggleAutoplay).not.toBeChecked();
+
+    // Close via close button
+    await closeBtn.click();
+    await expect(sheet).not.toHaveClass(/active/);
+
+    // Reopen and close via overlay
+    await openBtn.click();
+    await expect(sheet).toHaveClass(/active/);
+    await overlay.click({ position: { x: 10, y: 10 } });
+    await expect(sheet).not.toHaveClass(/active/);
+
+    // Switch language to English
+    await page.locator('.lang-btn[data-lang="en"]').click();
+
+    // Open settings and verify English labels
+    await openBtn.click();
+    await expect(sheet).toHaveClass(/active/);
+    await expect(page.locator('#settings-title')).toHaveText('Settings');
+    await expect(page.locator('#lbl-autoplay')).toHaveText('Autoplay');
+    await expect(page.locator('#lbl-dev-mode')).toHaveText('Developer Mode');
+
+    // Close settings
+    await closeBtn.click();
+    await expect(sheet).not.toHaveClass(/active/);
+
+    // Verify settings button is visible on home view
+    await expect(openBtn).toBeVisible();
+
+    // Navigate to tours view and verify settings button is hidden
+    await page.click('#btn-start-tours');
+    await expect(page.locator('#view-tours')).toBeVisible();
+    await expect(openBtn).toBeHidden();
+
+    // Return to home view and verify settings button is visible again
+    await page.click('#btn-tours-back');
+    await expect(page.locator('#view-home')).toBeVisible();
+    await expect(openBtn).toBeVisible();
+  });
+
   test('tour selection and step view content with carousel', async ({ page }) => {
     await page.goto('/index.html?config=tests/fixtures/config.yml');
     await page.click('#btn-start-tours');

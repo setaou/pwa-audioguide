@@ -30,6 +30,12 @@ assert(htmlContent.includes('id="audio-player-bar"'), 'index.html must have audi
 assert(htmlContent.includes('manifest.webmanifest'), 'index.html must link manifest');
 assert(htmlContent.includes('css/styles.css'), 'index.html must link css/styles.css');
 assert(htmlContent.includes("navigator.serviceWorker.register('./service-worker.js', { type: 'module' })"), 'index.html must register Service Worker as module');
+assert(htmlContent.includes('id="btn-settings-open"'), 'index.html must have btn-settings-open');
+assert(htmlContent.includes('id="settings-sheet"'), 'index.html must have settings-sheet');
+assert(htmlContent.includes('id="settings-overlay"'), 'index.html must have settings-overlay');
+assert(htmlContent.includes('id="toggle-dev-mode"'), 'index.html must have toggle-dev-mode');
+assert(htmlContent.includes('id="toggle-autoplay"'), 'index.html must have toggle-autoplay');
+assert(htmlContent.includes('id="btn-clear-cache"'), 'index.html must have btn-clear-cache');
 
 const cssContent = fs.readFileSync(cssPath, 'utf8');
 assert(cssContent.includes('.btn-next-pulse'), 'css/styles.css must define .btn-next-pulse');
@@ -365,6 +371,68 @@ assert(htmlContent.includes('caches.delete'), 'index.html must clear caches in d
 const devApp = new AudioguideApp({ isDevMode: true });
 assert.strictEqual(devApp.isDevMode, true, 'App should recognize isDevMode flag');
 assert.strictEqual(devApp.player.isDevMode, true, 'AudioPlayer should inherit isDevMode from AudioguideApp');
+
+// 11b. Test Settings State, toggles and autoplay guard
+const settingsStorage = {};
+const mockSettingsStorage = {
+  getItem: (k) => settingsStorage[k] || null,
+  setItem: (k, v) => { settingsStorage[k] = String(v); }
+};
+const settingsApp = new AudioguideApp({ localStorage: mockSettingsStorage });
+assert.strictEqual(settingsApp.isAutoplay, true, 'isAutoplay should default to true');
+assert.strictEqual(settingsApp.isDevMode, false, 'isDevMode should default to false');
+
+settingsApp.setAutoplay(false);
+assert.strictEqual(settingsApp.isAutoplay, false, 'setAutoplay(false) should update isAutoplay');
+assert.strictEqual(mockSettingsStorage.getItem('audioguide_autoplay'), 'false', 'setAutoplay(false) should persist to storage');
+
+settingsApp.setDevMode(true);
+assert.strictEqual(settingsApp.isDevMode, true, 'setDevMode(true) should update isDevMode');
+assert.strictEqual(settingsApp.player.isDevMode, true, 'setDevMode(true) should update player.isDevMode');
+assert.strictEqual(mockSettingsStorage.getItem('audioguide_dev_mode'), 'true', 'setDevMode(true) should persist to storage');
+
+// Test that new app restores stored settings
+const restoredApp = new AudioguideApp({ localStorage: mockSettingsStorage });
+assert.strictEqual(restoredApp.isAutoplay, false, 'Should restore isAutoplay=false from storage');
+assert.strictEqual(restoredApp.isDevMode, true, 'Should restore isDevMode=true from storage');
+
+// Test autoplay guard in loadStepByIndex
+let autoplayTriggered = false;
+settingsApp.player = {
+  pause: () => {},
+  loadStep: () => {},
+  play: () => { autoplayTriggered = true; }
+};
+settingsApp.currentTour = { id: 'tour-1', steps: ['step-1'] };
+settingsApp.langConfig = {
+  steps: [{ id: 'step-1', title: 'Step 1', audio: { webm: 'step1.webm' } }]
+};
+
+// With autoplay disabled
+autoplayTriggered = false;
+await settingsApp.loadStepByIndex(0);
+assert.strictEqual(autoplayTriggered, false, 'loadStepByIndex must NOT call player.play() when isAutoplay is false');
+
+// With autoplay re-enabled
+settingsApp.setAutoplay(true);
+autoplayTriggered = false;
+await settingsApp.loadStepByIndex(0);
+assert.strictEqual(autoplayTriggered, true, 'loadStepByIndex must call player.play() when isAutoplay is true');
+
+// 11c. Test Resilient Storage Handling (incognito / security restrictions)
+const throwingStorage = {
+  getItem: () => { throw new Error('SecurityError: Access denied'); },
+  setItem: () => { throw new Error('QuotaExceededError'); }
+};
+const safeApp = new AudioguideApp({ localStorage: throwingStorage });
+assert.doesNotThrow(() => safeApp.getSavedDevMode(), 'getSavedDevMode must not throw on restricted storage');
+assert.doesNotThrow(() => safeApp.getSavedAutoplay(), 'getSavedAutoplay must not throw on restricted storage');
+assert.doesNotThrow(() => safeApp.getSavedLanguage(), 'getSavedLanguage must not throw on restricted storage');
+assert.doesNotThrow(() => safeApp.setDevMode(true), 'setDevMode must not throw on restricted storage');
+assert.doesNotThrow(() => safeApp.setAutoplay(false), 'setAutoplay must not throw on restricted storage');
+assert.doesNotThrow(() => safeApp.setLanguage('en'), 'setLanguage must not throw on restricted storage');
+assert.strictEqual(safeApp.isDevMode, true, 'setDevMode should still update in-memory state');
+assert.strictEqual(safeApp.isAutoplay, false, 'setAutoplay should still update in-memory state');
 
 // 12. Test Hash Router parsing
 assert.strictEqual(typeof app.parseHash, 'function', 'app.parseHash should be a function');

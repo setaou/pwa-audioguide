@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
+import { getIcon } from '../js/icons.js';
 
 // Minimal YAML parser check or using js-yaml vendor bundle
 const rootDir = process.cwd();
@@ -83,12 +84,24 @@ function verifyLanguageConfig(langPath, langCode) {
     'skip_back_title',
     'skip_forward_title',
     'play_pause_title',
-    'audio_progress'
+    'audio_progress',
+    'settings_btn_title',
+    'settings_title',
+    'settings_dev_mode',
+    'settings_dev_mode_desc',
+    'settings_autoplay',
+    'settings_autoplay_desc',
+    'settings_clear_cache',
+    'settings_close'
   ];
 
   for (const k of requiredUiKeys) {
     assert(cfg.ui[k] !== undefined, `${langCode} ui is missing key: ${k}`);
   }
+
+  // Verify settings icon exists
+  assert(getIcon('settings').includes('<svg'), 'getIcon("settings") must return SVG');
+  assert(getIcon('settings').includes('<path'), 'getIcon("settings") must contain path');
 
   const stepIds = new Set(cfg.steps.map(s => s.id));
 
