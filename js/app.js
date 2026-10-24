@@ -34,7 +34,8 @@ export class AudioguideApp {
     this.fallbackLangConfig = null;
     this.currentTour = null;
     this.selectedTour = null;
-    this.downloadedTours = new Set();
+    this.downloadedTours = this._loadDownloadedTours();
+    this.downloadingTours = new Set();
     this.currentStepIndex = 0;
 
     this.player = new AudioPlayer({ isDevMode: this.isDevMode });
@@ -85,6 +86,50 @@ export class AudioguideApp {
       }
     } catch (_) {}
     return true;
+  }
+
+  getTourCacheKey(tour, lang = this.currentLanguage) {
+    const tourId = typeof tour === 'object' && tour !== null ? tour.id : tour;
+    return `${lang || 'default'}:${tourId}`;
+  }
+
+  isTourDownloaded(tour, lang = this.currentLanguage) {
+    if (!tour) return false;
+    return this.downloadedTours.has(this.getTourCacheKey(tour, lang));
+  }
+
+  isTourDownloading(tour, lang = this.currentLanguage) {
+    if (!tour) return false;
+    return this.downloadingTours.has(this.getTourCacheKey(tour, lang));
+  }
+
+  markTourDownloaded(tour, lang = this.currentLanguage) {
+    if (!tour) return;
+    this.downloadedTours.add(this.getTourCacheKey(tour, lang));
+    this._saveDownloadedTours();
+  }
+
+  _loadDownloadedTours() {
+    try {
+      if (this.storage && typeof this.storage.getItem === 'function') {
+        const raw = this.storage.getItem('audioguide_downloaded_tours');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            return new Set(parsed);
+          }
+        }
+      }
+    } catch (_) {}
+    return new Set();
+  }
+
+  _saveDownloadedTours() {
+    try {
+      if (this.storage && typeof this.storage.setItem === 'function') {
+        this.storage.setItem('audioguide_downloaded_tours', JSON.stringify(Array.from(this.downloadedTours)));
+      }
+    } catch (_) {}
   }
 
   setDevMode(enabled) {
@@ -182,13 +227,22 @@ export class AudioguideApp {
 
     if (dlBadgeEl) dlBadgeEl.textContent = this.t('offlineBadge');
 
-    const isDownloaded = Boolean(tour?.id && this.downloadedTours.has(tour.id));
+    const isDownloaded = this.isTourDownloaded(tour);
+    const isDownloading = this.isTourDownloading(tour);
+
     if (isDownloaded) {
       if (dlStatusEl) dlStatusEl.textContent = this.t('offlineReady');
       if (dlBar) dlBar.style.display = 'none';
       if (btnDownload) {
         btnDownload.disabled = true;
         btnDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+      }
+    } else if (isDownloading) {
+      if (dlStatusEl) dlStatusEl.textContent = this.t('downloading', 0);
+      if (dlBar) dlBar.style.display = 'block';
+      if (btnDownload) {
+        btnDownload.disabled = true;
+        btnDownload.innerHTML = `${getIcon('download')} <span>${this.t('downloading', 0)}</span>`;
       }
     } else {
       if (dlStatusEl) dlStatusEl.textContent = this.t('offlineDownload');
@@ -462,20 +516,42 @@ export class AudioguideApp {
       btnTourDownload.addEventListener('click', async () => {
         if (!this.selectedTour) return;
         const tour = this.selectedTour;
+        const currentLang = this.currentLanguage;
+        const cacheKey = this.getTourCacheKey(tour, currentLang);
+
+        this.downloadingTours.add(cacheKey);
         btnTourDownload.disabled = true;
+
         const bar = document.getElementById('tour-download-bar');
         const fill = document.getElementById('tour-download-fill');
         const status = document.getElementById('tour-download-status');
         if (bar) bar.style.display = 'block';
 
-        await this.preloader.preloadTour(tour, this.currentLanguage, this.langConfig, (p) => {
-          if (fill) fill.style.width = `${p.percent}%`;
-          if (status) status.textContent = this.t('downloading', p.percent);
-        }, this.getContentDir());
+        try {
+          await this.preloader.preloadTour(tour, currentLang, this.langConfig, (p) => {
+            if (this.selectedTour?.id === tour.id && this.currentLanguage === currentLang) {
+              if (fill) fill.style.width = `${p.percent}%`;
+              if (status) status.textContent = this.t('downloading', p.percent);
+            }
+          }, this.getContentDir());
 
-        this.downloadedTours.add(tour.id);
-        if (status) status.textContent = this.t('offlineReady');
-        btnTourDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+          this.markTourDownloaded(tour, currentLang);
+
+          if (this.selectedTour?.id === tour.id && this.currentLanguage === currentLang) {
+            if (status) status.textContent = this.t('offlineReady');
+            btnTourDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+          }
+        } catch (err) {
+          console.warn('Preload failed:', err);
+          if (this.selectedTour?.id === tour.id && this.currentLanguage === currentLang) {
+            if (status) status.textContent = this.t('offlineDownload');
+            if (bar) bar.style.display = 'none';
+            btnTourDownload.disabled = false;
+            btnTourDownload.innerHTML = `${getIcon('download')} <span>${this.t('offlineDownload')}</span>`;
+          }
+        } finally {
+          this.downloadingTours.delete(cacheKey);
+        }
       });
     }
 

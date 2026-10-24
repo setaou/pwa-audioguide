@@ -551,11 +551,24 @@ assert.strictEqual(app.currentView, 'home', 'Routing to #/ should set currentVie
   assert.strictEqual(elements['tour-action-overlay'].classList.contains('active'), false);
   assert.strictEqual(elements['tour-action-sheet'].getAttribute('aria-hidden'), 'true');
 
-  // Reopening a downloaded tour should show offline ready
-  app.downloadedTours.add('tour-sample');
+  // Language partitioning and persistence
+  assert.strictEqual(typeof app.getTourCacheKey, 'function', 'getTourCacheKey should be a function');
+  assert.strictEqual(app.getTourCacheKey(sampleTour), `${app.currentLanguage}:tour-sample`);
+
+  app.markTourDownloaded('tour-sample', 'en');
+  app.setLanguage('fr');
   app.openTourSheet(sampleTour);
-  assert.strictEqual(elements['btn-tour-download'].disabled, true);
-  assert.strictEqual(elements['tour-download-status'].textContent, app.t('offlineReady'));
+  assert.strictEqual(elements['btn-tour-download'].disabled, false, 'Tour downloaded in EN must NOT count as downloaded in FR');
+
+  app.setLanguage('en');
+  app.openTourSheet(sampleTour);
+  assert.strictEqual(elements['btn-tour-download'].disabled, true, 'Tour downloaded in EN must count as downloaded in EN');
+
+  // Persistence across app instances
+  const persistedApp = new AudioguideApp({ localStorage: fakeLocalStorage });
+  persistedApp.setLanguage('en');
+  persistedApp.openTourSheet(sampleTour);
+  assert.strictEqual(elements['btn-tour-download'].disabled, true, 'Downloaded tours must persist in storage');
 
   // Navigating to home should close tour sheet
   app.navigateTo('home');
