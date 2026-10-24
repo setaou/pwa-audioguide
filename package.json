@@ -2,7 +2,7 @@
   "name": "pwa-audioguide",
   "version": "1.0.0",
   "type": "module",
-  "private": true,
+  "license": "MIT",
   "scripts": {
     "serve": "node scripts/serve.js",
     "test:unit": "bash tests/run-all-tests.sh",
