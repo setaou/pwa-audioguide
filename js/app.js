@@ -289,7 +289,23 @@ export class AudioguideApp {
     }
   }
 
+  clearDownloadedTours() {
+    this.downloadedTours.clear();
+    this.downloadingTours.clear();
+    try {
+      if (this.storage && typeof this.storage.removeItem === 'function') {
+        this.storage.removeItem('audioguide_downloaded_tours');
+      }
+    } catch (_) {}
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
+        localStorage.removeItem('audioguide_downloaded_tours');
+      }
+    } catch (_) {}
+  }
+
   async clearCacheAndReload() {
+    this.clearDownloadedTours();
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       try {
         const regs = await navigator.serviceWorker.getRegistrations();

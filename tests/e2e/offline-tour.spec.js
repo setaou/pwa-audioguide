@@ -105,4 +105,54 @@ test.describe('Offline Tour & Service Worker Journey (Test Fixtures)', () => {
     // Restore network
     await context.setOffline(false);
   });
+
+  test('clearing cache from settings purges offline cache and resets downloaded status', async ({ page }) => {
+    // 1. Load application with fixtures
+    await page.goto('/index.html?config=tests/fixtures/config.yml');
+    await expect(page.locator('#view-home')).toBeVisible();
+
+    // 2. Navigate to Tours view
+    await page.click('#btn-start-tours');
+    await expect(page.locator('#view-tours')).toBeVisible();
+
+    // 3. Open tour action sheet and preload tour assets
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+
+    const preloadBtn = page.locator('#btn-tour-download');
+    await preloadBtn.click();
+    const preloadStatus = page.locator('#tour-download-status');
+    await expect(preloadStatus).toHaveText('Prêt hors-ligne', { timeout: 15000 });
+
+    // 4. Close sheet and verify downloaded badge on card
+    await page.click('#btn-tour-sheet-close');
+    const downloadedBadge = page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-badge-downloaded');
+    await expect(downloadedBadge).toBeVisible();
+
+    // 5. Navigate to Home and open Settings
+    await page.click('#btn-tours-back');
+    await expect(page.locator('#view-home')).toBeVisible();
+    await page.click('#btn-settings-open');
+    await expect(page.locator('#settings-sheet')).toBeVisible();
+
+    // 6. Click Purge Cache and Reload
+    await Promise.all([
+      page.waitForEvent('load'),
+      page.click('#btn-clear-cache')
+    ]);
+
+    // 7. Verify back on home, then check tours list
+    await expect(page.locator('#view-home')).toBeVisible();
+    await page.click('#btn-start-tours');
+    await expect(page.locator('#view-tours')).toBeVisible();
+
+    // 8. Badge must not be visible on tour card
+    await expect(page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-badge-downloaded')).toBeHidden();
+
+    // 9. Tour action sheet must show download button enabled
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+    await expect(page.locator('#tour-download-status')).toHaveText('Télécharger');
+    await expect(page.locator('#btn-tour-download')).toBeEnabled();
+  });
 });

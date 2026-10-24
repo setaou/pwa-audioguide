@@ -63,7 +63,9 @@ assert(typeof AudioguideApp === 'function', 'AudioguideApp class must exist');
 const mockStorage = {};
 const fakeLocalStorage = {
   getItem: (k) => mockStorage[k] || null,
-  setItem: (k, v) => { mockStorage[k] = String(v); }
+  setItem: (k, v) => { mockStorage[k] = String(v); },
+  removeItem: (k) => { delete mockStorage[k]; },
+  clear: () => { Object.keys(mockStorage).forEach(k => delete mockStorage[k]); }
 };
 
 const app = new AudioguideApp({ localStorage: fakeLocalStorage });
@@ -574,6 +576,14 @@ assert.strictEqual(app.currentView, 'home', 'Routing to #/ should set currentVie
   persistedApp.setLanguage('en');
   persistedApp.openTourSheet(sampleTour);
   assert.strictEqual(elements['btn-tour-download'].disabled, true, 'Downloaded tours must persist in storage');
+
+  // Purging cache must clear downloaded tours from memory and storage
+  await persistedApp.clearCacheAndReload();
+  assert.strictEqual(persistedApp.isTourDownloaded('tour-sample', 'en'), false, 'Tour must no longer be marked as downloaded after clearing cache');
+  assert.strictEqual(fakeLocalStorage.getItem('audioguide_downloaded_tours'), null, 'Storage key audioguide_downloaded_tours must be removed after clearing cache');
+
+  const afterPurgeApp = new AudioguideApp({ localStorage: fakeLocalStorage });
+  assert.strictEqual(afterPurgeApp.isTourDownloaded('tour-sample', 'en'), false, 'New app instance must not see tours as downloaded after clearing cache');
 
   // Navigating to home should close tour sheet
   app.navigateTo('home');
