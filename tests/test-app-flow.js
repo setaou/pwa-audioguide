@@ -482,4 +482,86 @@ assert.strictEqual(app.currentStepIndex, 0, 'Invalid step in valid tour should s
 await app.setRoute('#/');
 assert.strictEqual(app.currentView, 'home', 'Routing to #/ should set currentView to home');
 
+// 14. Test Tour Action Bottom Sheet (openTourSheet, closeTourSheet)
+{
+  assert.strictEqual(typeof app.openTourSheet, 'function', 'app.openTourSheet should be a function');
+  assert.strictEqual(typeof app.closeTourSheet, 'function', 'app.closeTourSheet should be a function');
+
+  const createMockEl = () => {
+    const classes = new Set();
+    const attrs = {};
+    return {
+      textContent: '',
+      innerHTML: '',
+      style: {},
+      disabled: false,
+      classList: {
+        add: (c) => classes.add(c),
+        remove: (c) => classes.delete(c),
+        contains: (c) => classes.has(c)
+      },
+      setAttribute: (k, v) => { attrs[k] = String(v); },
+      getAttribute: (k) => attrs[k] || null
+    };
+  };
+
+  const elements = {
+    'tour-action-sheet': createMockEl(),
+    'tour-action-overlay': createMockEl(),
+    'tour-sheet-title': createMockEl(),
+    'tour-sheet-badge': createMockEl(),
+    'tour-sheet-meta': createMockEl(),
+    'tour-sheet-desc': createMockEl(),
+    'tour-download-badge': createMockEl(),
+    'tour-download-status': createMockEl(),
+    'tour-download-bar': createMockEl(),
+    'tour-download-fill': createMockEl(),
+    'btn-tour-start': createMockEl(),
+    'btn-tour-download': createMockEl(),
+    'txt-tour-start': createMockEl(),
+    'txt-tour-download': createMockEl()
+  };
+
+  globalThis.document = {
+    getElementById: (id) => elements[id] || null
+  };
+
+  const sampleTour = {
+    id: 'tour-sample',
+    title: 'Sample Tour',
+    badge: 'Express',
+    duration: '20 min',
+    description: 'A great sample tour',
+    steps: ['step-1', 'step-2']
+  };
+
+  // Open tour sheet
+  app.openTourSheet(sampleTour);
+  assert.strictEqual(app.selectedTour?.id, 'tour-sample');
+  assert.strictEqual(elements['tour-action-sheet'].classList.contains('active'), true);
+  assert.strictEqual(elements['tour-action-overlay'].classList.contains('active'), true);
+  assert.strictEqual(elements['tour-action-sheet'].getAttribute('aria-hidden'), 'false');
+  assert.strictEqual(elements['tour-sheet-title'].textContent, 'Sample Tour');
+  assert.strictEqual(elements['tour-sheet-badge'].textContent, 'Express');
+  assert.strictEqual(elements['tour-sheet-desc'].textContent, 'A great sample tour');
+
+  // Close tour sheet
+  app.closeTourSheet();
+  assert.strictEqual(elements['tour-action-sheet'].classList.contains('active'), false);
+  assert.strictEqual(elements['tour-action-overlay'].classList.contains('active'), false);
+  assert.strictEqual(elements['tour-action-sheet'].getAttribute('aria-hidden'), 'true');
+
+  // Reopening a downloaded tour should show offline ready
+  app.downloadedTours.add('tour-sample');
+  app.openTourSheet(sampleTour);
+  assert.strictEqual(elements['btn-tour-download'].disabled, true);
+  assert.strictEqual(elements['tour-download-status'].textContent, app.t('offlineReady'));
+
+  // Navigating to home should close tour sheet
+  app.navigateTo('home');
+  assert.strictEqual(elements['tour-action-sheet'].classList.contains('active'), false);
+
+  delete globalThis.document;
+}
+
 console.log('✓ test-app-flow passed successfully!');

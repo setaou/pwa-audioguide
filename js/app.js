@@ -33,6 +33,8 @@ export class AudioguideApp {
     this.langConfig = null;
     this.fallbackLangConfig = null;
     this.currentTour = null;
+    this.selectedTour = null;
+    this.downloadedTours = new Set();
     this.currentStepIndex = 0;
 
     this.player = new AudioPlayer({ isDevMode: this.isDevMode });
@@ -142,6 +144,90 @@ export class AudioguideApp {
     const btnOpen = document.getElementById('btn-settings-open');
     if (btnOpen && typeof btnOpen.focus === 'function') {
       btnOpen.focus();
+    }
+  }
+
+  openTourSheet(tour) {
+    this.selectedTour = tour;
+    if (typeof document === 'undefined') return;
+
+    const overlay = document.getElementById('tour-action-overlay');
+    const sheet = document.getElementById('tour-action-sheet');
+    const titleEl = document.getElementById('tour-sheet-title');
+    const badgeEl = document.getElementById('tour-sheet-badge');
+    const metaEl = document.getElementById('tour-sheet-meta');
+    const descEl = document.getElementById('tour-sheet-desc');
+    const dlBadgeEl = document.getElementById('tour-download-badge');
+    const dlStatusEl = document.getElementById('tour-download-status');
+    const dlBar = document.getElementById('tour-download-bar');
+    const dlFill = document.getElementById('tour-download-fill');
+    const btnStart = document.getElementById('btn-tour-start');
+    const btnDownload = document.getElementById('btn-tour-download');
+    const btnClose = document.getElementById('btn-tour-sheet-close');
+
+    if (btnClose) {
+      btnClose.setAttribute('aria-label', this.t('tourSheetClose') || this.t('settingsClose') || 'Fermer');
+    }
+
+    if (titleEl) titleEl.textContent = tour?.title || '';
+    if (badgeEl) {
+      badgeEl.textContent = tour?.badge || '';
+      badgeEl.style.display = tour?.badge ? 'inline-block' : 'none';
+    }
+    const stepCount = (tour?.steps || []).length;
+    if (metaEl) {
+      metaEl.textContent = `⏱ ${tour?.duration || ''} • ${this.t('stepsCount', stepCount)}`;
+    }
+    if (descEl) descEl.textContent = tour?.description || '';
+
+    if (dlBadgeEl) dlBadgeEl.textContent = this.t('offlineBadge');
+
+    const isDownloaded = Boolean(tour?.id && this.downloadedTours.has(tour.id));
+    if (isDownloaded) {
+      if (dlStatusEl) dlStatusEl.textContent = this.t('offlineReady');
+      if (dlBar) dlBar.style.display = 'none';
+      if (btnDownload) {
+        btnDownload.disabled = true;
+        btnDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+      }
+    } else {
+      if (dlStatusEl) dlStatusEl.textContent = this.t('offlineDownload');
+      if (dlBar) {
+        dlBar.style.display = 'none';
+        if (dlFill) dlFill.style.width = '0%';
+      }
+      if (btnDownload) {
+        btnDownload.disabled = false;
+        btnDownload.innerHTML = `${getIcon('download')} <span>${this.t('offlineDownload')}</span>`;
+      }
+    }
+
+    if (btnStart) {
+      btnStart.innerHTML = `${getIcon('play')} <span>${this.t('startTour') || 'Démarrer le parcours'}</span>`;
+    }
+
+    if (overlay) {
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    if (sheet) {
+      sheet.classList.add('active');
+      sheet.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  closeTourSheet() {
+    if (typeof document === 'undefined') return;
+    const overlay = document.getElementById('tour-action-overlay');
+    const sheet = document.getElementById('tour-action-sheet');
+
+    if (overlay) {
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+    if (sheet) {
+      sheet.classList.remove('active');
+      sheet.setAttribute('aria-hidden', 'true');
     }
   }
 
@@ -345,12 +431,64 @@ export class AudioguideApp {
       });
     }
 
+    // Tour Action Bottom Sheet Bindings
+    const btnTourSheetClose = document.getElementById('btn-tour-sheet-close');
+    if (btnTourSheetClose) {
+      btnTourSheetClose.addEventListener('click', () => {
+        this.closeTourSheet();
+      });
+    }
+
+    const tourOverlay = document.getElementById('tour-action-overlay');
+    if (tourOverlay) {
+      tourOverlay.addEventListener('click', () => {
+        this.closeTourSheet();
+      });
+    }
+
+    const btnTourStart = document.getElementById('btn-tour-start');
+    if (btnTourStart) {
+      btnTourStart.addEventListener('click', () => {
+        const tour = this.selectedTour;
+        this.closeTourSheet();
+        if (tour) {
+          this.selectTour(tour);
+        }
+      });
+    }
+
+    const btnTourDownload = document.getElementById('btn-tour-download');
+    if (btnTourDownload) {
+      btnTourDownload.addEventListener('click', async () => {
+        if (!this.selectedTour) return;
+        const tour = this.selectedTour;
+        btnTourDownload.disabled = true;
+        const bar = document.getElementById('tour-download-bar');
+        const fill = document.getElementById('tour-download-fill');
+        const status = document.getElementById('tour-download-status');
+        if (bar) bar.style.display = 'block';
+
+        await this.preloader.preloadTour(tour, this.currentLanguage, this.langConfig, (p) => {
+          if (fill) fill.style.width = `${p.percent}%`;
+          if (status) status.textContent = this.t('downloading', p.percent);
+        }, this.getContentDir());
+
+        this.downloadedTours.add(tour.id);
+        if (status) status.textContent = this.t('offlineReady');
+        btnTourDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+      });
+    }
+
     if (typeof document.addEventListener === 'function') {
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          const sheet = document.getElementById('settings-sheet');
-          if (sheet && sheet.classList.contains('active')) {
+          const settingsSheet = document.getElementById('settings-sheet');
+          if (settingsSheet && settingsSheet.classList.contains('active')) {
             this.closeSettings();
+          }
+          const tourSheet = document.getElementById('tour-action-sheet');
+          if (tourSheet && tourSheet.classList.contains('active')) {
+            this.closeTourSheet();
           }
         }
       });
@@ -562,6 +700,9 @@ export class AudioguideApp {
     const btnSettingsClose = document.getElementById('btn-settings-close');
     if (btnSettingsClose) btnSettingsClose.setAttribute('aria-label', this.t('settingsClose'));
 
+    const btnTourSheetClose = document.getElementById('btn-tour-sheet-close');
+    if (btnTourSheetClose) btnTourSheetClose.setAttribute('aria-label', this.t('tourSheetClose') || this.t('settingsClose'));
+
     const lblDevMode = document.getElementById('lbl-dev-mode');
     if (lblDevMode) lblDevMode.textContent = this.t('settingsDevMode');
 
@@ -632,6 +773,9 @@ export class AudioguideApp {
 
   navigateTo(viewName) {
     this.currentView = viewName;
+    if (viewName !== 'tours') {
+      this.closeTourSheet();
+    }
     if (viewName !== 'step') {
       if (this.player && typeof this.player.pause === 'function') {
         this.player.pause();
@@ -659,7 +803,9 @@ export class AudioguideApp {
       settingsBtn.style.display = viewName === 'home' ? 'flex' : 'none';
     }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   parseHash(hash = '') {
@@ -803,54 +949,22 @@ export class AudioguideApp {
         </div>
         <h3 class="tour-card-title">${tour.title}</h3>
         <p class="tour-card-desc">${tour.description || ''}</p>
-
-        <div class="preload-panel" id="preload-panel-${tour.id}">
-          <div class="preload-panel-header">
-            <span>${this.t('offlineBadge')}</span>
-            <span id="preload-status-${tour.id}">${this.t('offlineDownload')}</span>
-          </div>
-          <div class="preload-progress-bar" style="display: none;" id="preload-bar-${tour.id}">
-            <div class="preload-progress-fill" id="preload-fill-${tour.id}"></div>
-          </div>
-          <button class="preload-btn" id="btn-preload-${tour.id}">
-            ${getIcon('download')}
-            <span>${this.t('offlineDownload')}</span>
-          </button>
+        <div class="tour-card-footer">
+          <span class="tour-card-cta">${this.t('startTour') || 'Choisir ce parcours'} →</span>
         </div>
       `;
 
-      // Open tour when card body is clicked
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.preload-btn')) return; // ignore download button click
-        this.selectTour(tour);
+      // Open tour action bottom sheet when card is clicked
+      card.addEventListener('click', () => {
+        this.openTourSheet(tour);
       });
-
-      // Offline Preload trigger
-      const preloadBtn = card.querySelector(`#btn-preload-${tour.id}`);
-      if (preloadBtn) {
-        preloadBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          preloadBtn.disabled = true;
-          const bar = card.querySelector(`#preload-bar-${tour.id}`);
-          const fill = card.querySelector(`#preload-fill-${tour.id}`);
-          const status = card.querySelector(`#preload-status-${tour.id}`);
-          if (bar) bar.style.display = 'block';
-
-          await this.preloader.preloadTour(tour, this.currentLanguage, this.langConfig, (p) => {
-            if (fill) fill.style.width = `${p.percent}%`;
-            if (status) status.textContent = this.t('downloading', p.percent);
-          }, this.getContentDir());
-
-          if (status) status.textContent = this.t('offlineReady');
-          preloadBtn.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
-        });
-      }
 
       toursContainer.appendChild(card);
     });
   }
 
   selectTour(tour) {
+    this.closeTourSheet();
     this.currentTour = tour;
     const firstStepId = (tour.steps && tour.steps.length > 0) ? tour.steps[0] : '';
     if (firstStepId) {
