@@ -552,6 +552,11 @@ assert.strictEqual(app.currentView, 'home', 'Routing to #/ should set currentVie
   assert.strictEqual(elements['tour-action-sheet'].getAttribute('aria-hidden'), 'true');
 
   // Language partitioning and persistence
+  assert.strictEqual(typeof app.cleanOfflineReadyLabel, 'function', 'cleanOfflineReadyLabel should be a function');
+  assert.strictEqual(app.cleanOfflineReadyLabel('✓ Disponible hors-ligne'), 'Disponible hors-ligne');
+  assert.strictEqual(app.cleanOfflineReadyLabel('✔ Offline Ready'), 'Offline Ready');
+  assert.strictEqual(app.cleanOfflineReadyLabel('Prêt hors-ligne'), 'Prêt hors-ligne');
+
   assert.strictEqual(typeof app.getTourCacheKey, 'function', 'getTourCacheKey should be a function');
   assert.strictEqual(app.getTourCacheKey(sampleTour), `${app.currentLanguage}:tour-sample`);
 

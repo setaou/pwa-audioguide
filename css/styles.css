@@ -268,6 +268,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.tour-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .tour-card-badge {
@@ -278,6 +286,25 @@ body {
   border-radius: 6px;
   background: rgba(56, 189, 248, 0.15);
   color: var(--accent-primary);
+}
+
+.tour-card-badge-downloaded {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tour-card-badge-downloaded svg {
+  width: 12px;
+  height: 12px;
 }
 
 .tour-card-meta {
@@ -426,24 +453,10 @@ body {
   margin: 0 0 16px;
 }
 
-.tour-download-box {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px dashed var(--accent-emerald);
-  border-radius: 12px;
-  padding: 12px;
+.tour-sheet-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.tour-download-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-emerald);
+  gap: 12px;
 }
 
 .tour-download-bar {
@@ -451,6 +464,7 @@ body {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   overflow: hidden;
+  margin: -4px 0 2px;
 }
 
 .tour-download-fill {
@@ -458,37 +472,6 @@ body {
   width: 0%;
   background: var(--accent-emerald);
   transition: width 0.2s ease;
-}
-
-.tour-sheet-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.btn-tour-start {
-  background: var(--accent-primary);
-  color: #0f172a;
-  border: none;
-  border-radius: 12px;
-  padding: 14px 20px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-
-.btn-tour-start:hover {
-  opacity: 0.95;
-}
-
-.btn-tour-start:active {
-  transform: scale(0.98);
 }
 
 .btn-tour-download {
@@ -515,6 +498,31 @@ body {
 .btn-tour-download:disabled {
   opacity: 0.75;
   cursor: default;
+}
+
+.btn-tour-start {
+  background: var(--accent-primary);
+  color: #0f172a;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.btn-tour-start:hover {
+  opacity: 0.95;
+}
+
+.btn-tour-start:active {
+  transform: scale(0.98);
 }
 
 /* ==========================================================================

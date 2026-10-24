@@ -93,6 +93,11 @@ export class AudioguideApp {
     return `${lang || 'default'}:${tourId}`;
   }
 
+  cleanOfflineReadyLabel(str) {
+    if (!str) return 'Disponible hors-ligne';
+    return String(str).replace(/^[✓✔\s]+/, '').trim();
+  }
+
   isTourDownloaded(tour, lang = this.currentLanguage) {
     if (!tour) return false;
     return this.downloadedTours.has(this.getTourCacheKey(tour, lang));
@@ -225,24 +230,23 @@ export class AudioguideApp {
     }
     if (descEl) descEl.textContent = tour?.description || '';
 
-    if (dlBadgeEl) dlBadgeEl.textContent = this.t('offlineBadge');
-
     const isDownloaded = this.isTourDownloaded(tour);
     const isDownloading = this.isTourDownloading(tour);
+    const readyLabel = this.cleanOfflineReadyLabel(this.t('offlineReady'));
 
     if (isDownloaded) {
-      if (dlStatusEl) dlStatusEl.textContent = this.t('offlineReady');
+      if (dlStatusEl) dlStatusEl.textContent = readyLabel;
       if (dlBar) dlBar.style.display = 'none';
       if (btnDownload) {
         btnDownload.disabled = true;
-        btnDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+        btnDownload.innerHTML = `${getIcon('check')} <span id="tour-download-status">${readyLabel}</span>`;
       }
     } else if (isDownloading) {
       if (dlStatusEl) dlStatusEl.textContent = this.t('downloading', 0);
       if (dlBar) dlBar.style.display = 'block';
       if (btnDownload) {
         btnDownload.disabled = true;
-        btnDownload.innerHTML = `${getIcon('download')} <span>${this.t('downloading', 0)}</span>`;
+        btnDownload.innerHTML = `${getIcon('download')} <span id="tour-download-status">${this.t('downloading', 0)}</span>`;
       }
     } else {
       if (dlStatusEl) dlStatusEl.textContent = this.t('offlineDownload');
@@ -252,7 +256,7 @@ export class AudioguideApp {
       }
       if (btnDownload) {
         btnDownload.disabled = false;
-        btnDownload.innerHTML = `${getIcon('download')} <span>${this.t('offlineDownload')}</span>`;
+        btnDownload.innerHTML = `${getIcon('download')} <span id="tour-download-status">${this.t('offlineDownload')}</span>`;
       }
     }
 
@@ -538,16 +542,19 @@ export class AudioguideApp {
           this.markTourDownloaded(tour, currentLang);
 
           if (this.selectedTour?.id === tour.id && this.currentLanguage === currentLang) {
-            if (status) status.textContent = this.t('offlineReady');
-            btnTourDownload.innerHTML = `${getIcon('check')} <span>${this.t('offlineReady')}</span>`;
+            const readyLabel = this.cleanOfflineReadyLabel(this.t('offlineReady'));
+            if (status) status.textContent = readyLabel;
+            btnTourDownload.innerHTML = `${getIcon('check')} <span id="tour-download-status">${readyLabel}</span>`;
+            if (bar) bar.style.display = 'none';
           }
+          this.renderTours();
         } catch (err) {
           console.warn('Preload failed:', err);
           if (this.selectedTour?.id === tour.id && this.currentLanguage === currentLang) {
             if (status) status.textContent = this.t('offlineDownload');
             if (bar) bar.style.display = 'none';
             btnTourDownload.disabled = false;
-            btnTourDownload.innerHTML = `${getIcon('download')} <span>${this.t('offlineDownload')}</span>`;
+            btnTourDownload.innerHTML = `${getIcon('download')} <span id="tour-download-status">${this.t('offlineDownload')}</span>`;
           }
         } finally {
           this.downloadingTours.delete(cacheKey);
@@ -1017,10 +1024,15 @@ export class AudioguideApp {
       card.dataset.tourId = tour.id;
 
       const stepCount = (tour.steps || []).length;
+      const isDownloaded = this.isTourDownloaded(tour);
+      const readyLabel = this.cleanOfflineReadyLabel(this.t('offlineReady'));
 
       card.innerHTML = `
         <div class="tour-card-header">
-          <span class="tour-card-badge">${tour.badge || ''}</span>
+          <div class="tour-card-badges">
+            ${tour.badge ? `<span class="tour-card-badge">${tour.badge}</span>` : ''}
+            ${isDownloaded ? `<span class="tour-card-badge-downloaded">${getIcon('check')} <span>${readyLabel}</span></span>` : ''}
+          </div>
           <span class="tour-card-meta">⏱ ${tour.duration || ''} • ${this.t('stepsCount', stepCount)}</span>
         </div>
         <h3 class="tour-card-title">${tour.title}</h3>

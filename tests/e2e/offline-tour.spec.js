@@ -31,6 +31,17 @@ test.describe('Offline Tour & Service Worker Journey (Test Fixtures)', () => {
     await expect(preloadStatus).toHaveText('Prêt hors-ligne', { timeout: 15000 });
     await expect(preloadBtn).toContainText('Prêt hors-ligne');
 
+    // Verify green badge appears on the tour card in the tours list
+    await page.click('#btn-tour-sheet-close');
+    await expect(page.locator('#tour-action-sheet')).toBeHidden();
+    const downloadedBadge = page.locator('.tour-card[data-tour-id="tour-1"] .tour-card-badge-downloaded');
+    await expect(downloadedBadge).toBeVisible();
+    await expect(downloadedBadge).toContainText('Prêt hors-ligne');
+
+    // Re-open sheet for offline visit
+    await page.locator('.tour-card[data-tour-id="tour-1"]').click();
+    await expect(page.locator('#tour-action-sheet')).toBeVisible();
+
     // Verify assets are cached in CacheStorage
     const cachedFiles = await page.evaluate(async () => {
       if (!('caches' in window)) return [];
