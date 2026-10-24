@@ -36,6 +36,10 @@ assert(htmlContent.includes('id="settings-overlay"'), 'index.html must have sett
 assert(htmlContent.includes('id="toggle-dev-mode"'), 'index.html must have toggle-dev-mode');
 assert(htmlContent.includes('id="toggle-autoplay"'), 'index.html must have toggle-autoplay');
 assert(htmlContent.includes('id="btn-clear-cache"'), 'index.html must have btn-clear-cache');
+assert(htmlContent.includes('id="tour-action-sheet"'), 'index.html must have tour-action-sheet');
+assert(htmlContent.includes('id="tour-action-overlay"'), 'index.html must have tour-action-overlay');
+assert(htmlContent.includes('id="btn-tour-start"'), 'index.html must have btn-tour-start');
+assert(htmlContent.includes('id="btn-tour-download"'), 'index.html must have btn-tour-download');
 
 const cssContent = fs.readFileSync(cssPath, 'utf8');
 assert(cssContent.includes('.btn-next-pulse'), 'css/styles.css must define .btn-next-pulse');
